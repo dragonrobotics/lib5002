@@ -14,6 +14,6 @@ class trajectory {
   void addPoint(double t, PhysState st) { points.push_back( std::make_pair(t, st) ); }
   void addPoint(trajPt pt) { points.push_back(pt); }
   trajPt findMaxHeight();
-  double getDistance() { return points.back()[1].pos.x; }
-  double getFlightTime() { return points.back()[0]; }
+  double getDistance() { return points.back().second.pos.x; }
+  double getFlightTime() { return points.back().first; }
 };
