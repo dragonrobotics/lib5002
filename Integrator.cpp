@@ -7,13 +7,14 @@
 
 #include "Integrator.h"
 #include "AccelerateFunctions.h"
+#include <vector>
 
 PhysDeriv derive(
 		PhysState const& curState,
 		PhysDeriv const& curDeriv,
 		double time,
 		double delta,
-		AccelerateFunction& accelerate) {
+		std::vector<AccelerateFunction> forceLift) {
 
 	PhysState tmpState;
 
@@ -28,13 +29,15 @@ PhysDeriv derive(
 	newDeriv.vel = curState.vel;
 	newDeriv.angvel = curState.angvel;
 
-	accelerate(tmpState, newDeriv, time, delta);
+	for(AccelerateFunction& i = forceLift.begin();i != forceLift.end();++i) {
+		i(tmpState, newDeriv, time, delta);
+	}
 
 	return newDeriv;
 }
 
 
-PhysState integrate(PhysState const& curState, double time, double delta, AccelerateFunction& accFunc) {
+PhysState integrate(PhysState const& curState, double time, double delta, std::vector<AccelerateFunction> accFunc) {
 	PhysDeriv a = derive(curState, PhysDeriv(), time, 0.0, accFunc);
 	PhysDeriv b = derive(curState, a, time+(delta/2), delta/2, accFunc);
 	PhysDeriv c = derive(curState, b, time+(delta/2), delta/2, accFunc);
