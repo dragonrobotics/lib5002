@@ -1,3 +1,6 @@
+#include <vector>
+#include "trajectory.h"
+
 namespace frc2016 {
 
 const double boulder_diameter = .254; // m
@@ -26,15 +29,19 @@ PhysState frc2016_initalize(double avel1, double avel2, double initElev) {
   return out;
 }
 
-void frc2016_simulate(PhysState initState) {
+trajectory frc2016_simulate(PhysState initState) {
   PhysState cur = initState;
   double curTime = 0;
+  trajectory data;
   
   while(cur.pos.y >= 0) {
+    data.add(curTime, cur);
     cur = integrate(cur, curTime, timestep, forceComp);
     curTime += timestep;
   }
+  data.add(curTime, cur);
   
+  return data;
 }
 
 }
