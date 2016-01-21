@@ -14,7 +14,7 @@ PhysDeriv derive(
 		PhysDeriv const& curDeriv,
 		double time,
 		double delta,
-		std::vector<AccelerateFunction> forceLift) {
+		std::vector<AccelerateFunction*> forceLift) {
 
 	PhysState tmpState;
 
@@ -30,14 +30,14 @@ PhysDeriv derive(
 	newDeriv.angvel = curState.angvel;
 
 	for(AccelerateFunction& i = forceLift.begin();i != forceLift.end();++i) {
-		i(tmpState, newDeriv, time, delta);
+		*i(tmpState, newDeriv, time, delta);
 	}
 
 	return newDeriv;
 }
 
 
-PhysState integrate(PhysState const& curState, double time, double delta, std::vector<AccelerateFunction> accFunc) {
+PhysState integrate(PhysState const& curState, double time, double delta, std::vector<AccelerateFunction*> accFunc) {
 	PhysDeriv a = derive(curState, PhysDeriv(), time, 0.0, accFunc);
 	PhysDeriv b = derive(curState, a, time+(delta/2), delta/2, accFunc);
 	PhysDeriv c = derive(curState, b, time+(delta/2), delta/2, accFunc);
