@@ -4,6 +4,6 @@
 <booleanAttribute key="org.eclipse.ui.externaltools.ATTR_BUILDER_ENABLED" value="false"/>
 <stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="C:\Program Files (x86)\PuTTY\plink.exe"/>
 <stringAttribute key="org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS" value="full,incremental,"/>
-<stringAttribute key="org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS" value="-load &quot;centralstorage&quot; &quot;cd /mnt/storage/FirstStrongholdPhysics &amp;&amp; make&quot;"/>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS" value="-load &quot;tokyo3&quot; &quot;ssh sebastian@192.168.0.201 'cd /mnt/storage/FirstStrongholdPhysics &amp;&amp; git pull https master &amp;&amp; make'&quot;"/>
 <booleanAttribute key="org.eclipse.ui.externaltools.ATTR_TRIGGERS_CONFIGURED" value="true"/>
 </launchConfiguration>
