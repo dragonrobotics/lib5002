@@ -5,12 +5,15 @@
 #include <algorithm>
 #include "Integrator.h"
 
+typedef std::pair<double, PhysState> trajPt;
+
 class trajectory {
-  std::vector< std::pair<double, PhysState> > points;
+  std::vector<trajPt> points;
   
   points.iterator iterator() { return points.begin(); }
   void addPoint(double t, PhysState st) { points.push_back( std::make_pair(t, st) ); }
-  std::pair<double, PhysState> findMaxHeight();
+  void addPoint(trajPt pt) { points.push_back(pt); }
+  trajPt findMaxHeight();
   double getDistance() { return points.back()[1].pos.x; }
   double getFlightTime() { return points.back()[0]; }
 };
