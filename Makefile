@@ -15,7 +15,7 @@ INC_DIR := ./src/include
 CPP_FILES    := $(shell find $(SRC_DIR) -type f -name *.cpp)
 OBJ_FILES :=  $(subst src/,obj/,$(patsubst %.cpp, %.o, $(CPP_FILES)))
 
-CPP_ARGS := -I$(INC_DIR)
+CXXFLAGS  := -I$(INC_DIR)
 
 physsim.a: $(OBJ_FILES)
 	ar rvs $(OBJ_FILES) physsim.a
