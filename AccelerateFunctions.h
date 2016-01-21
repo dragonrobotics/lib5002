@@ -40,8 +40,8 @@ class dragAcc : public AccelerateFunction {
 		outderiv.linacc.y = outderiv.linacc.y - ( (outderiv.linacc.y > 0) ? accDrag.y : -accDrag.y );
 	}
 
-	void dragAcc(double crossSection, double m, double dragCoefficient) {
-		dragForceCoefficient = (crossSection * dragCoefficient * airDensity) / 2.0;
+	void dragAcc(double diameter, double m, double dragCoefficient) {
+		dragForceCoefficient = (((PI * (diameter*diameter)) / 4) * dragCoefficient * airDensity) / 2.0;
 		mass = m;
 	}
 };
