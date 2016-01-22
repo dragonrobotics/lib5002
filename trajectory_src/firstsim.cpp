@@ -1,5 +1,7 @@
 #include <vector>
 #include "trajectory.h"
+#include "AccelerateFunctions.h"
+#include "Integrator.h"
 
 namespace frc2016 {
 
@@ -21,9 +23,9 @@ PhysState frc2016_initalize(double avel1, double avel2, double initElev) {
   double ballLinVel = ( (wheel_iner_moment * ((avel1+avel2) * (avel1+avel2))) - (boulder_iner_moment * ballAngVel * ballAngVel) ) / boulder_mass;
   
   PhysState out;
-  out.angVel = ballAngVel;
-  out.linVel.x = ballLinVel;
-  out.linVel.y = 0;
+  out.angvel = ballAngVel;
+  out.linvel.x = ballLinVel;
+  out.linvel.y = 0;
   out.pos.y = initElev;
   
   return out;
@@ -35,11 +37,11 @@ trajectory frc2016_simulate(PhysState initState) {
   trajectory data;
   
   while(cur.pos.y >= 0) {
-    data.add(curTime, cur);
+    data.addPoint(curTime, cur);
     cur = integrate(cur, curTime, timestep, forceComp);
     curTime += timestep;
   }
-  data.add(curTime, cur);
+  data.addPoint(curTime, cur);
   
   return data;
 }

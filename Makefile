@@ -8,17 +8,32 @@ else
 CXX := g++
 endif
 
-OBJ_DIR := ./obj
-SRC_DIR := ./src
-INC_DIR := ./src/include
+TRAJ_SRC_DIR := ./trajectory_src
+TRAJ_OBJ_DIR := $(TRAJ_SRC_DIR)/obj
+TRAJ_INC_DIR := $(TRAJ_SRC_DIR)/include
+TRAJ_CPP_FILES    := $(shell find $(TRAJ_SRC_DIR) -type f -name *.cpp)
+TRAJ_OBJ_FILES :=  $(subst $(TRAJ_SRC_DIR),$(TRAJ_OBJ_DIR),$(patsubst %.cpp, %.o, $(TRAJ_CPP_FILES)))
 
-CPP_FILES    := $(shell find $(SRC_DIR) -type f -name *.cpp)
-OBJ_FILES :=  $(subst src/,obj/,$(patsubst %.cpp, %.o, $(CPP_FILES)))
+VISN_SRC_DIR := ./visproc_src
+VISN_OBJ_DIR := $(VISN_SRC_DIR)/obj
+VISN_INC_DIR := $(VISN_SRC_DIR)/include
+VISN_CPP_FILES := $(shell find $(VISN_SRC_DIR) -type f -name *.cpp)
+VISN_OBJ_FILES :=  $(subst $(VISN_SRC_DIR),$(VISN_OBJ_DIR),$(patsubst %.cpp, %.o, $(VISN_CPP_FILES)))
 
-CXXFLAGS  := -I$(INC_DIR)
+CXXFLAGS := -std=c++14
 
-physsim.a: $(OBJ_FILES)
-	ar rvs $(OBJ_FILES) physsim.a
+Trajectory: trajectory
+
+VisionProcessing: visproc
+
+trajectory: $(TRAJ_OBJ_FILES)
+	ar -rvs trajectory.a $(TRAJ_OBJ_FILES) 
 	
-$(OBJ_FILES): $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cpp
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+visproc: $(VISN_OBJ_FILES)
+	g++ -o visproc.elf -I$(VISN_INC_DIR) $(VISN_SRC_FILES)
+	
+$(TRAJ_OBJ_FILES): $(TRAJ_OBJ_DIR)/%.o : $(TRAJ_SRC_DIR)/%.cpp
+	@$(CXX) $(CXXFLAGS) -I$(TRAJ_INC_DIR) -c $< -o $@
+	
+$(VISN_OBJ_FILES): $(VISN_OBJ_DIR)/%.o : $(VISN_SRC_DIR)/%.cpp
+	@$(CXX) $(CXXFLAGS) -I$(VISN_INC_DIR) -c $< -o $@

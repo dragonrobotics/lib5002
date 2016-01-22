@@ -10,7 +10,8 @@ typedef std::pair<double, PhysState> trajPt;
 class trajectory {
   std::vector<trajPt> points;
   
-  points.iterator iterator() { return points.begin(); }
+public:
+  std::vector<trajPt>::iterator iterator() { return points.begin(); }
   void addPoint(double t, PhysState st) { points.push_back( std::make_pair(t, st) ); }
   void addPoint(trajPt pt) { points.push_back(pt); }
   trajPt findMaxHeight();
