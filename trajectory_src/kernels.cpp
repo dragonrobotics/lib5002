@@ -4,6 +4,10 @@ __device__ __constant__ double ballRadius = 0;
 __device__ __constant__ double ballR3 = (ballRadius * ballRadius * ballRadius);
 __device__ __constant__ double pi = ;
 __device__ __constant__ double piSquared = pi*pi;
+__device__ __constant__ double ball_moment_inertia = ballRadius * ballRadius * ballMass;
+__device__ __constant__ double wheelRadius = 0;
+__device__ __constant__ double wheelMass = 0;
+__device__ __constant__ double wheel_moment_inertia = wheelRadius * wheelRadius * wheelMass;
 
 typedef struct {
   double2 pos;
