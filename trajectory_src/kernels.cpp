@@ -1,12 +1,15 @@
-__device__ __constant__ double dragForceCoefficient = 0;
-__device__ __constant__ double ballMass = 0;
-__device__ __constant__ double ballRadius = 0;
-__device__ __constant__ double ballR3 = (ballRadius * ballRadius * ballRadius);
-__device__ __constant__ double pi = ;
+__device__ __constant__ double pi = 3.14159265359;
 __device__ __constant__ double piSquared = pi*pi;
+__device__ __constant__ double airDensity = 1.225;
+__device__ __constant__ double ballMass = .294835;
+__device__ __constant__ double ballDiameter = .254;
+__device__ __constant__ double ballRadius = .254 / 2;
+__device__ __constant__ double ballDragCoefficient = 0.47;
+__device__ __constant__ double ballR3 = (ballRadius * ballRadius * ballRadius);
 __device__ __constant__ double ball_moment_inertia = ballRadius * ballRadius * ballMass;
-__device__ __constant__ double wheelRadius = 0;
-__device__ __constant__ double wheelMass = 0;
+__device__ __constant__ double dragForceCoefficient = (((pi * (ballDiameter*ballDiameter)) / 4) * ballDragCoefficient * airDensity) / 2.0;
+__device__ __constant__ double wheelRadius = 3;
+__device__ __constant__ double wheelMass = 0.226796;
 __device__ __constant__ double wheel_moment_inertia = wheelRadius * wheelRadius * wheelMass;
 
 typedef struct {
