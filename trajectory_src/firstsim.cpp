@@ -12,6 +12,14 @@ const double wheel_mass = 0; // TODO: fill this in
 const double boulder_iner_moment = 0;
 const double wheel_iner_moment = 0;
 const double timestep = 0.01;
+const double motor_k = 12.0 / 18000.0;
+const double motor_r = 17.14;
+
+const double mount_launch_angle = 0;
+
+/*
+ * speed = (voltage_in / motor_k) - (torque / motor_k^2)resistance
+ */
 
 const std::vector<AccelerateFunction*> forceComp = {
   new spinLiftAcc(boulder_diameter / 2, boulder_mass),
@@ -24,11 +32,17 @@ PhysState frc2016_initalize(double avel1, double avel2, double initElev) {
   
   PhysState out;
   out.angvel = ballAngVel;
-  out.linvel.x = ballLinVel;
-  out.linvel.y = 0;
+  out.linvel.x = ballLinVel * cos(mount_launch_angle);
+  out.linvel.y = ballLinVel * sin(mount_launch_angle);
   out.pos.y = initElev;
   
   return out;
+}
+
+PhysState frc_2016_initialize_motorVbusOut(double m1, double m2, double initElev) {
+	double avel1 = (12*m1) / motor_k;
+	double avel2 = (12*m2) / motor_k;
+	return frc_2016_initialize(avel1, avel2, initElev);
 }
 
 trajectory frc2016_simulate(PhysState initState) {
@@ -44,6 +58,4 @@ trajectory frc2016_simulate(PhysState initState) {
   data.addPoint(curTime, cur);
   
   return data;
-}
-
 }
