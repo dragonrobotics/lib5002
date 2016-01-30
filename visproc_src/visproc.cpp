@@ -264,11 +264,29 @@ scoredContour boulder_pipeline(cv::Mat input, bool suppress_output=false, bool w
 	}
 }
 
-void val_min_adjust(int v, void* ignore) { valThres[0] = v; }
-void val_max_adjust(int v, void* ignore) { valThres[1] = v; }
+const double fovHoriz = 0.776417; // rad
+const double fovVert = 0.551077; // rad
 
-void hue_min_adjust(int v, void* ignore) { hueThres[0] = v; }
-void hue_max_adjust(int v, void* ignore) { hueThres[1] = v; }
+const double targetWidth = 20.0; // inches
+const double targetHeight = 14.0; // inches
+
+/* fovWidth = width of input image in pixels */
+double getDistance(cv::Size targetSize, cv::Size fovSize) {
+	double dW = targetWidth * fovSize.width / (targetSize.width * tan(fovHoriz));
+	double dH = targetHeight * fovSize.height / (targetSize.height * tan(fovVert));
+
+	return dW;
+
+	//return ((dW + dH) / 2.0); // returns feet
+}
+
+double getFOVAngleHoriz(cv::Size targetSize, cv::Size fovSize, double distance) {
+	return atan2(targetWidth * fovSize.width, targetSize.width * distance);
+}
+
+double getFOVAngleVert(cv::Size targetSize, cv::Size fovSize, double distance) {
+	return atan2(targetHeight * fovSize.height, targetSize.height * distance);
+}
 
 int main(int argc, char** argv) {
         if(argc == 1) {
@@ -348,6 +366,7 @@ int main(int argc, char** argv) {
 			cvCreateTrackbar("Val Min", "input", &(valThres[0]), 255, NULL);
 			cvCreateTrackbar("Val Max", "input", &(valThres[1]), 255, NULL);
 
+			std::vector<cv::Point> last_good;
 
 			while(true) {
 				cv::Mat src;
@@ -376,14 +395,29 @@ int main(int argc, char** argv) {
 					std::vector< std::vector<cv::Point> > drawVec;
 					drawVec.push_back(out.second);
 
+					cv::Rect bounds = cv::boundingRect(out.second);
+					last_good = out.second;
+
 					cv::Scalar col(255,255,255);
 					cv::drawContours(output, drawVec, 0, col);
 					cv::putText(output, std::to_string(fps), cv::Point(50, 50), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 0, 255));
+					cv::putText(output, std::to_string(getDistance(bounds.size(), src.size())) + " inches", cv::Point(50, 75), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 255, 0));
+/*
+					cv::putText(output, std::string("Horizontal ") + std::to_string(getFOVAngleHoriz(bounds.size(), src.size(), 36.0)) + " radians", cv::Point(50, 75), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 255, 0));
+					cv::putText(output, std::string("Vertical ") + std::to_string(getFOVAngleVert(bounds.size(), src.size(), 36.0)) + " radians", cv::Point(50, 100), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(255, 0, 0));
+*/
 				
 					cv::imshow("output", output);
 				}
 
-				if(cv::waitKey(30) >= 0) break;
+				if(cv::waitKey(30) >= 0) { 
+/*
+					cv::Rect bounds = cv::boundingRect(last_good);
+					std::cout << "Horizontal: " << std::to_string(getFOVAngleHoriz(bounds.size(), src.size(), 36.0)) + " radians" << std::endl;
+					std::cout << "Vertical: " << std::to_string(getFOVAngleVert(boundsize(), src.size(), 36.0)) + " radians" << std::endl;
+*/
+					break;
+				}
 			}
 		}
 }
