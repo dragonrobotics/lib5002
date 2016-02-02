@@ -1,17 +1,26 @@
 #pragma once
 #include <netinet/in.h>
 
-enum message_types {
+enum class message_types : unsigned char {
 	INVALID = 0,
 	GET_STATUS = 1,
-	GET_GOAL_DISTANCE = 2
+	STATUS = 2,
+	GET_GOAL_DISTANCE = 3,
+	GOAL_DISTANCE = 4
 };
 
 struct message {
-	unsigned char header[4]; 	// '5' '0' '0' '1'
-	unsigned char type;		// Message type (see above)
-	unsigned int  size;		// Size of payload
-	void* data;
+	unsigned char	header[4]; 	// '5' '0' '0' '1'
+	message_types	type;		// Message type (see above)
+	unsigned short	size;		// Size of payload
+	unsigned char	data;
+	
+	message() {
+		header[0] = '5';
+		header[1] = '0';
+		header[2] = '0';
+		header[3] = '1';
+	}
 };
 
 /*
@@ -24,9 +33,23 @@ struct message {
  * - 1+2+dlen+2+slen : last byte of data
  */
 struct goal_distance_msg {
-	unsigned char status;
+	enum class goal_status : unsigned char {
+		GOAL_NOT_FOUND = 0,
+		GOAL_FOUND = 255
+	};
+	
+	goal_status status;
 	double distance;
 	double score;
+	
+	goal_distance_msg(double dist, double sc) :
+		distance(dist), score(sc) {
+		if(dist > 0) {
+			status = goal_status.GOAL_FOUND;
+		} else {
+			status = goal_status.GOAL_NOT_FOUND;
+		}
+	}
 	
 	goal_distance_msg(void* data) {
 		status = *static_cast<unsigned char*>(data);
@@ -36,7 +59,17 @@ struct goal_distance_msg {
 		distance = std::string(
 			static_cast<unsigned char*>(data+3), dlen-1).stod();
 		score = std::string(
-			static_cast<unsigned char*>(dlen+5), slen-1).stod();
+			static_cast<unsigned char*>(data+dlen+5), slen-1).stod();
+	}
+	
+	size_t sizeof_data() {
+		std::string dstr = distance;
+		std::string sstr = score;
+		
+		unsigned short dlen = dstr.length()+1;
+		unsigned short slen = sstr.length()+1;
+		
+		return dlen+slen+5;
 	}
 	
 	std::unique_ptr<void> struct_to_data() {

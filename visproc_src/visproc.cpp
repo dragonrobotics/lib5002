@@ -21,6 +21,8 @@ const double cannyThresMin = 10;
 const double cannyThresSize = 10; /* Max = ThresMin + ThresSize */
 const double pi = 3.14159265358979323846;
 
+typedef std::pair< double, std::vector<cv::Point> > scoredContour;
+
 void convert_and_write(const char* filename, cv::Mat hsvimg) {
         cv::Mat tmp;
         cv::cvtColor(hsvimg, tmp, CV_HSV2BGR);
@@ -96,8 +98,6 @@ cv::Mat boulder_preprocess_pipeline(cv::Mat input, bool suppress_output=false, b
 
         return edgedet;
 }
-
-typedef std::pair< double, std::vector<cv::Point> > scoredContour;
 
 bool scoresort(scoredContour c1, scoredContour c2) {
         return (c1.first < c2.first);
@@ -273,7 +273,7 @@ const double targetHeight = 14.0; // inches
 /* fovWidth = width of input image in pixels */
 double getDistance(cv::Size targetSize, cv::Size fovSize) {
 	double dW = targetWidth * fovSize.width / (targetSize.width * tan(fovHoriz));
-	double dH = targetHeight * fovSize.height / (targetSize.height * tan(fovVert));
+	//double dH = targetHeight * fovSize.height / (targetSize.height * tan(fovVert));
 
 	return dW;
 
@@ -288,6 +288,16 @@ double getFOVAngleVert(cv::Size targetSize, cv::Size fovSize, double distance) {
 	return atan2(targetHeight * fovSize.height, targetSize.height * distance);
 }
 
+double goal_pipeline_full(cv::Mat src) {
+	scoredContour out = goal_pipeline(goal_preprocess_pipeline(src));
+	if( out.second.size() > 0 ) {
+		cv::Rect bounds = cv::boundingRect(out.second);
+		return getDistance(bounds.size(), src.size());
+	}
+	return -1;
+}
+
+#ifdef VISPROC_STANDALONE
 int main(int argc, char** argv) {
         if(argc == 1) {
             std::cout << "Need input file to process." << std::endl;
@@ -421,3 +431,4 @@ int main(int argc, char** argv) {
 			}
 		}
 }
+#endif
