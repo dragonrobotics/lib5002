@@ -16,11 +16,7 @@ class netmsg {
 	const int socktype;
 	
 public:
-
-	netmsg(size_t bufsz = default_buflen, int type) {
-		if(bufsz == 0)
-			bufsz = default_buflen;
-			
+	netmsg(size_t bufsz, int type) {
 		data.reset(new unsigned char[bufsz]);
 		len = bufsz;
 		
@@ -28,6 +24,10 @@ public:
 		addrlen = sizeof *addr;
 		
 		socktype = type;
+	}
+	
+	netmsg(int type) {
+		return netmsg(default_buflen, type);
 	}
 	
 	netmsg(netmsg& rhs) {
@@ -52,7 +52,12 @@ public:
 
 	/* ----------------------------------------------------------------- */
 	
-	void setbuf(std::shared_ptr<void> d, size_t len) {
+	void setbuf(std::shared_ptr<void>& d, size_t len) {
+		data.reset(d);
+		buflen = len;
+	}
+	
+	void setbuf(std::unique_ptr<void>&& d, size_t len) {
 		data.reset(d);
 		buflen = len;
 	}
@@ -246,5 +251,11 @@ public:
 		netmsg out(default_buflen, this->socktype);
 		out.recv(fd, flags);
 		return std::move(out);
+	}
+	
+	/* ----------------------------------------------------------------- */
+	
+	int send(netmsg& packet_out, int flags) {
+		return out.send(fd, flags);
 	}
 };
