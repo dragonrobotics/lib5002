@@ -2,11 +2,16 @@ ifndef ARCH
 ARCH := X86
 endif
 
+X86CXX := g++-4.9
+ARMCXX := arm-linux-gnueabihf-g++-4.9
+
 ifeq ($(ARCH), ARM)
-CXX := arm-linux-gnueabihf-g++
+CXX := $(ARMCXX)
 else
-CXX := g++-4.9
+CXX := $(X86CXX)
 endif
+
+
 
 TRAJ_SRC_DIR := ./trajectory_src
 TRAJ_OBJ_DIR := $(TRAJ_SRC_DIR)/obj
@@ -31,6 +36,9 @@ trajectory: $(TRAJ_OBJ_FILES)
 
 visproc: $(VISN_CPP_FILES)
 	$(CXX) --std=c++14 -o visproc  -I$(VISN_INC_DIR) -I$(OPENCV_INC_DIR)  $(VISN_CPP_FILES) $(OPENCV_LIB_FLAGS)
+
+nettest: ./server_src/test_server.cpp
+	$(ARMCXX) --std=c++14 -o test_server_arm -I./server_src/include ./server_src/test_server.cpp
 
 $(TRAJ_OBJ_FILES): $(TRAJ_OBJ_DIR)/%.o : $(TRAJ_SRC_DIR)/%.cpp
 	@$(CXX) --std=c++14 -I$(TRAJ_INC_DIR) -c $< -o $@
