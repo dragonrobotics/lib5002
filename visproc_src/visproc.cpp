@@ -1,7 +1,6 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgcodecs.hpp"
-#include "opencv2/highgui.hpp"
 #include "opencv2/videoio.hpp"
 #include <vector>
 #include <algorithm>
@@ -23,12 +22,6 @@ const double pi = 3.14159265358979323846;
 
 typedef std::pair< double, std::vector<cv::Point> > scoredContour;
 
-void convert_and_write(const char* filename, cv::Mat hsvimg) {
-        cv::Mat tmp;
-        cv::cvtColor(hsvimg, tmp, CV_HSV2BGR);
-        cv::imwrite(filename, tmp);
-}
-
 cv::Mat goal_preprocess_pipeline(cv::Mat input, bool suppress_output=false, bool live_output=false) {
         cv::Mat tmp(input.size(), input.type());
 
@@ -37,30 +30,18 @@ cv::Mat goal_preprocess_pipeline(cv::Mat input, bool suppress_output=false, bool
         /* Make things easier for the HV filter */
         //cv::blur(tmp, tmp, cv::Size(5,5));
         cv::GaussianBlur(tmp, tmp, cv::Size(5,5), 2.5, 2.5, cv::BORDER_REPLICATE);
-        if(!suppress_output) { convert_and_write("pipeline_stage1.png", tmp); }
-		if(live_output) { cv::imshow("stage1", tmp); }
 
         /* Filter on color/brightness */
         cv::Mat mask(input.size(), CV_8U);
         cv::inRange(tmp, cv::Scalar((unsigned char)hueThres[0],0,(unsigned char)valThres[0]), cv::Scalar((unsigned char)hueThres[1],255,(unsigned char)valThres[1]), mask);
-        if(!suppress_output) { cv::imwrite("pipeline_stage2.png", mask); }
-		if(live_output) { cv::imshow("stage2", mask); }
-
         /* Erode away smaller hits */
         cv::erode(mask, mask, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5,5)));
-        if(!suppress_output) { cv::imwrite("pipeline_stage3.png", mask); }
-		if(live_output) { cv::imshow("stage3", mask); }
 
         /* Blur for edge detection */
         cv::Mat edgedet;
         cv::blur(mask, edgedet, cv::Size(3,3));
-        if(!suppress_output) { cv::imwrite("pipeline_stage4.png", edgedet); }
-		if(live_output) { cv::imshow("stage4", edgedet); }
 
         cv::Canny(edgedet, edgedet, cannyThresMin, cannyThresMin+cannyThresSize);
-        if(!suppress_output) { cv::imwrite("pipeline_stage5.png", edgedet); }
-		if(live_output) { cv::imshow("stage5", edgedet); }
-
         return edgedet;
 }
 
@@ -72,29 +53,19 @@ cv::Mat boulder_preprocess_pipeline(cv::Mat input, bool suppress_output=false, b
         /* Make things easier for the HV filter */
         //cv::blur(tmp, tmp, cv::Size(5,5));
         cv::GaussianBlur(tmp, tmp, cv::Size(5,5), 2.5, 2.5, cv::BORDER_DEFAULT);
-        if(!suppress_output) {convert_and_write("pipeline_stage1.png", tmp); }
-		if(live_output) { cv::imshow("stage1", tmp); }
 
         /* Filter on saturation and brightness */
         cv::Mat mask(input.size(), CV_8U);
         cv::inRange(tmp, cv::Scalar(0,0,90), cv::Scalar(180,35,255), mask);
-        if(!suppress_output) { cv::imwrite("pipeline_stage2.png", mask); }
-		if(live_output) { cv::imshow("stage2", mask); }
 
         /* Erode away smaller hits */
         cv::erode(mask, mask, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(7,7)));
-        if(!suppress_output) { cv::imwrite("pipeline_stage3.png", mask); }
-		if(live_output) { cv::imshow("stage3", mask); }
 
         /* Blur for edge detection */
         cv::Mat edgedet;
         cv::blur(mask, edgedet, cv::Size(9,9));
-        if(!suppress_output) { cv::imwrite("pipeline_stage4.png", edgedet); }
-		if(live_output) { cv::imshow("stage4", edgedet); }
 
         cv::Canny(edgedet, edgedet, cannyThresMin, cannyThresMin+cannyThresSize);
-        if(!suppress_output) { cv::imwrite("pipeline_stage5.png", edgedet); }
-		if(live_output) { cv::imshow("stage5", edgedet); }
 
         return edgedet;
 }
@@ -288,6 +259,35 @@ double getFOVAngleVert(cv::Size targetSize, cv::Size fovSize, double distance) {
 	return atan2(targetHeight * fovSize.height, targetSize.height * distance);
 }
 
+/* returns angle off center horizontal and angle off center vertical */
+std::pair<double, double> getRelativeAngleOffCenter(scoredContour object, cv::Size fovSize, double distance) {
+	std::pair<double, double> out;
+
+	cv::Moments m = cv::moments(object.double);
+	double cX = m.m10 / m.m00;
+	double cY = m.m01 / m.m00;
+	
+	double xAxis = fovSize.height / 2;
+	double yAxis = fovSize.width / 2;
+
+	double dX = abs(yAxis - cX);
+	double dY = abs(xAxis - cY);
+	
+	if(cX < yAxis) { // left of center
+		out.first = asin(dX / distance);
+	} else {
+		out.first = -asin(dX / distance);
+	}
+
+	if(cY < xAxis) { // above center
+		out.second = asin(dY / distance);
+	} else {
+		out.second = -asin(dY / distance);
+	}
+
+	return out;
+}
+
 double goal_pipeline_full(cv::Mat src) {
 	scoredContour out = goal_pipeline(goal_preprocess_pipeline(src));
 	if( out.second.size() > 0 ) {
@@ -295,6 +295,27 @@ double goal_pipeline_full(cv::Mat src) {
 		return getDistance(bounds.size(), src.size());
 	}
 	return -1;
+}
+
+int main(int argc, char** argv) {
+	cv::VideoCapture cap(1); // open cam 1
+	if(!cap.isOpened())  // check if we succeeded
+		return -1;
+
+	while(true) {
+		cv::Mat src;
+		if( !cap.read(src) ) {
+			std::cerr << "Error reading image from camera";	
+			return -1;
+		}
+
+		scoredContour out = goal_pipeline(goal_preprocess_pipeline(src));
+
+		if( out.second.size() > 0 ) {
+			cv::Rect bounds = cv::boundingRect(out.second);
+			double dist = getDistance(bounds.size(), src.size());
+		}
+	}
 }
 
 #ifdef VISPROC_STANDALONE
