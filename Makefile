@@ -19,13 +19,11 @@ TRAJ_INC_DIR := $(TRAJ_SRC_DIR)/include
 TRAJ_CPP_FILES    := $(shell find $(TRAJ_SRC_DIR) -type f -name *.cpp)
 TRAJ_OBJ_FILES :=  $(subst $(TRAJ_SRC_DIR),$(TRAJ_OBJ_DIR),$(patsubst %.cpp, %.o, $(TRAJ_CPP_FILES)))
 
-VISN_SRC_DIR := ./visproc_src
-VISN_OBJ_DIR := $(VISN_SRC_DIR)/obj
+VISN_COMMON := ./visproc_src/common.cpp ./visproc_src/testing_environment.cpp ./visproc_src/include/visproc_common.h ./visproc_src/include/visproc_interface.h
+
 VISN_INC_DIR := $(VISN_SRC_DIR)/include
 OPENCV_INC_DIR := $(VISN_SRC_DIR)/opencv_include
 OPENCV_LIB_FLAGS := -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_imgcodecs -lopencv_videoio
-OPENCV_LIB_ARM_FLAGS := -Wl,-lopencv_core,-lopencv_imgproc,-lopencv_highgui,-lopencv_imgcodecs,-lopencv_videoio
-VISN_CPP_FILES := ./visproc_src/visproc.cpp
 
 Trajectory: trajectory
 
@@ -34,11 +32,17 @@ VisionProcessing: visproc
 trajectory: $(TRAJ_OBJ_FILES)
 	ar -rvs trajectory.a $(TRAJ_OBJ_FILES)
 
-visproc-arm: $(VISN_CPP_FILES)
-	$(ARMCXX) --std=c++14 -o visproc  -I$(VISN_INC_DIR) -I$(OPENCV_INC_DIR)  $(VISN_CPP_FILES) 
+goalproc: $(VISN_COMMON) ./visproc_src/goal.cpp
+	$(X86CXX) --std=c++14 -o goalproc -I$(VISN_INC_DIR) -I$(OPENCV_INC_DIR) $(OPENCV_LIB_FLAGS) $(VISN_COMMON) ./visproc_src/goal.cpp
 
-visproc: $(VISN_CPP_FILES)
-	$(CXX) --std=c++14 -o visproc  -I$(VISN_INC_DIR) -I$(OPENCV_INC_DIR)  $(VISN_CPP_FILES) $(OPENCV_LIB_FLAGS)
+goalproc-arm: $(VISN_COMMON) ./visproc_src/goal.cpp
+	$(ARMCXX) --std=c++14 -o goalproc -I$(VISN_INC_DIR) -I$(OPENCV_INC_DIR) $(OPENCV_LIB_FLAGS) $(VISN_COMMON) ./visproc_src/goal.cpp
+
+ballproc: $(VISN_COMMON) ./visproc_src/goal.cpp
+	$(X86CXX) --std=c++14 -o ballproc -I$(VISN_INC_DIR) -I$(OPENCV_INC_DIR) $(OPENCV_LIB_FLAGS) $(VISN_COMMON) ./visproc_src/ball.cpp
+
+ballproc-arm: $(VISN_COMMON) ./visproc_src/goal.cpp
+	$(ARMCXX) --std=c++14 -o ballproc -I$(VISN_INC_DIR) -I$(OPENCV_INC_DIR) $(OPENCV_LIB_FLAGS) $(VISN_COMMON) ./visproc_src/ball.cpp
 
 nettest: ./server_src/test_server.cpp
 	$(ARMCXX) --std=c++14 -o test_server_arm -I./server_src/include ./server_src/test_server.cpp
