@@ -24,8 +24,8 @@ VISN_OBJ_DIR := $(VISN_SRC_DIR)/obj
 VISN_INC_DIR := $(VISN_SRC_DIR)/include
 OPENCV_INC_DIR := $(VISN_SRC_DIR)/opencv_include
 OPENCV_LIB_FLAGS := -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_imgcodecs -lopencv_videoio
-VISN_CPP_FILES := $(shell find $(VISN_SRC_DIR) -type f -name *.cpp)
-
+OPENCV_LIB_ARM_FLAGS := -Wl,-lopencv_core,-lopencv_imgproc,-lopencv_highgui,-lopencv_imgcodecs,-lopencv_videoio
+VISN_CPP_FILES := ./visproc_src/visproc.cpp
 
 Trajectory: trajectory
 
@@ -33,6 +33,9 @@ VisionProcessing: visproc
 
 trajectory: $(TRAJ_OBJ_FILES)
 	ar -rvs trajectory.a $(TRAJ_OBJ_FILES)
+
+visproc-arm: $(VISN_CPP_FILES)
+	$(ARMCXX) --std=c++14 -o visproc  -I$(VISN_INC_DIR) -I$(OPENCV_INC_DIR)  $(VISN_CPP_FILES) 
 
 visproc: $(VISN_CPP_FILES)
 	$(CXX) --std=c++14 -o visproc  -I$(VISN_INC_DIR) -I$(OPENCV_INC_DIR)  $(VISN_CPP_FILES) $(OPENCV_LIB_FLAGS)
