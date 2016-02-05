@@ -2,6 +2,9 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/videoio.hpp"
+#ifdef VISPROC_EXTENDED_TEST
+#include "opencv2/highgui.hpp"
+#endif
 #include <vector>
 #include <algorithm>
 #include <utility>
@@ -263,26 +266,24 @@ double getFOVAngleVert(cv::Size targetSize, cv::Size fovSize, double distance) {
 std::pair<double, double> getRelativeAngleOffCenter(scoredContour object, cv::Size fovSize, double distance) {
 	std::pair<double, double> out;
 
-	cv::Moments m = cv::moments(object.double);
+	cv::Moments m = cv::moments(object.second);
 	double cX = m.m10 / m.m00;
 	double cY = m.m01 / m.m00;
-	
+
+	cv::Rect bounds = cv::boundingRect(object.second);
+
 	double xAxis = fovSize.height / 2;
 	double yAxis = fovSize.width / 2;
 
-	double dX = abs(yAxis - cX);
-	double dY = abs(xAxis - cY);
-	
-	if(cX < yAxis) { // left of center
-		out.first = asin(dX / distance);
-	} else {
-		out.first = -asin(dX / distance);
+	out.first = asin(abs(yAxis - cX) / distance);
+	out.second = asin(abs(xAxis - bounds.br().y) / distance);
+
+	if(cX > yAxis) { // right of center
+		out.first *= -1;
 	}
 
-	if(cY < xAxis) { // above center
-		out.second = asin(dY / distance);
-	} else {
-		out.second = -asin(dY / distance);
+	if(cY > xAxis) { // below center
+		out.second *= -1;
 	}
 
 	return out;
@@ -297,6 +298,7 @@ double goal_pipeline_full(cv::Mat src) {
 	return -1;
 }
 
+#ifdef VISPROC_BASIC_TEST
 int main(int argc, char** argv) {
 	cv::VideoCapture cap(1); // open cam 1
 	if(!cap.isOpened())  // check if we succeeded
@@ -317,8 +319,9 @@ int main(int argc, char** argv) {
 		}
 	}
 }
+#endif
 
-#ifdef VISPROC_STANDALONE
+#ifdef VISPROC_EXTENDED_TEST
 int main(int argc, char** argv) {
         if(argc == 1) {
             std::cout << "Need input file to process." << std::endl;
@@ -429,10 +432,14 @@ int main(int argc, char** argv) {
 					cv::Rect bounds = cv::boundingRect(out.second);
 					last_good = out.second;
 
+					double d = getDistance(bounds.size(), src.size());
+					std::pair<double, double> angles = getRelativeAngleOffCenter(out, src.size(), d);
+
 					cv::Scalar col(255,255,255);
 					cv::drawContours(output, drawVec, 0, col);
 					cv::putText(output, std::to_string(fps), cv::Point(50, 50), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 0, 255));
-					cv::putText(output, std::to_string(getDistance(bounds.size(), src.size())) + " inches", cv::Point(50, 75), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 255, 0));
+					cv::putText(output, std::to_string(d) + " inches", cv::Point(50, 75), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 255, 0));
+					cv::putText(output, std::to_string(angles.first * (180 / pi)) + " degrees horizontal / " + std::to_string(angles.second * (180 / pi)) + " degrees vertical", cv::Point(50, 100), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(255, 0, 0));
 /*
 					cv::putText(output, std::string("Horizontal ") + std::to_string(getFOVAngleHoriz(bounds.size(), src.size(), 36.0)) + " radians", cv::Point(50, 75), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 255, 0));
 					cv::putText(output, std::string("Vertical ") + std::to_string(getFOVAngleVert(bounds.size(), src.size(), 36.0)) + " radians", cv::Point(50, 100), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(255, 0, 0));
