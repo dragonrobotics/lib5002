@@ -6,20 +6,28 @@
 #include <iostream>
 
 const int serverPort = 5800;
-const int connType = SOCK_STREAM; // TCP
 
-std::unique_ptr<message> create_message_buffer(void* payload, size_t payloadsz) {
-	unsigned char* buf = new unsigned char[sizeof message + payloadsz];
-	message* out = static_cast<message*>(buf);
-	
-	out->message();
-	memcpy(buf+sizeof(message)-1, payload, payloadsz);
-	
-	return std::unique_ptr<message>(out);
+void disc_server() {
+	serverSocket sock(serverPort, SOCK_DGRAM);
+
+	while(true) {
+		netmsg msg = sock.recv(0);
+		
+		if(message::is_valid_message(static_cast<void*>(msg.getbuf().get())) {
+			std::shared_ptr<message> msgdata = std::static_pointer_cast(msg.getbuf());
+			if(msgdata->type == message_types::DISCOVER) {
+				netmsg out = wrap_packet(discover_msg(discover_msg::origin_t::JETSON), SOCK_DGRAM);
+				out.addr = msg.addr;
+
+				sock.send(out);
+			}
+		}
+	}
 }
 
-void do_server() {
-	serverSocket sock(serverPort, connType);
+void conn_server() {
+	serverSocket listenSock(serverPort, SOCK_STREAM);
+	
 	cv::VideoCapture camera(0);
 	
 	if(!camera.isOpened()) {
@@ -28,13 +36,12 @@ void do_server() {
 	}
 	
 	while(true) {
-		netmsg msg = sock.recv(0);
+		connSocket dataSock = listenSock.waitForConnection();
+		netaddr addr = dataSock.getaddr();
 		
-		std::shared_ptr<message> msgdata =
-			std::static_pointer_cast(msg.data);
-			
-		if(msgdata->header[0] == '5' && msgdata->header[1] == '0' &&
-			msgdata->header[2] == '0' && msgdata->header[3] == '2') {
+		if(message::is_valid_message(static_cast<void*>(msg.getbuf().get())) {
+			std::shared_ptr<message> msgdata = std::static_pointer_cast(msg.getbuf());
+
 			if(msgdata->type == message_types.GET_GOAL_DISTANCE) {
 				cv::Mat src;
 				
@@ -47,21 +54,8 @@ void do_server() {
 					dist = getDistance(bounds.size(), src.size());
 				}
 				
-				goal_distance_msg ret(dist, out.first);
-				
-				std::unique_ptr<void> ret_data = ret.struct_to_data();
-				
-				short sz = ret.sizeof_data();
-					
-				std::unique_ptr<message> packet =
-					create_message_buffer(ret_data.get(), sz);
-				
-				netmsg retmsg(conntype);
-				retmsg.setbuf(packet, sz);
-				
-				sock.send(retmsg);
+				sock.send(wrap_packet(goal_distance_msg(dist, out.first), SOCK_STREAM));
 			}
-		}
-			
+		}			
 	}
 }
