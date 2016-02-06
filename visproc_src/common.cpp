@@ -1,3 +1,5 @@
+#include "visproc_common.h"
+#include "visproc_interface.h"
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include <vector>
@@ -42,7 +44,7 @@ double getFOVAngleVert(cv::Size targetSize, cv::Size fovSize, double distance) {
 std::pair<double, double> getRelativeAngleOffCenter(scoredContour object, cv::Size fovSize, double distance) {
 	std::pair<double, double> out;
 
-	cv::Moments m = cv::moments(object.double);
+	cv::Moments m = cv::moments(object.second);
 	double cX = m.m10 / m.m00;
 	double cY = m.m01 / m.m00;
 	

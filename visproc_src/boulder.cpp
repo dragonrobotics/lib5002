@@ -9,7 +9,11 @@
 #include <utility>
 #include <iostream>
 
-cv::Mat boulder_preprocess_pipeline(cv::Mat input, bool suppress_output=false, bool live_output=false) {
+int ball_hueThres[2] = {0, 180};
+int ball_satThres[2] = {0, 50};
+int ball_valThres[2] = {90, 255};
+
+cv::Mat boulder_preprocess_pipeline(cv::Mat input, bool suppress_output, bool live_output) {
         cv::Mat tmp(input.size(), input.type());
 
         cv::cvtColor(input, tmp, CV_BGR2HSV);
@@ -20,7 +24,10 @@ cv::Mat boulder_preprocess_pipeline(cv::Mat input, bool suppress_output=false, b
 
         /* Filter on saturation and brightness */
         cv::Mat mask(input.size(), CV_8U);
-        cv::inRange(tmp, cv::Scalar(0,0,90), cv::Scalar(180,35,255), mask);
+        cv::inRange(tmp,
+					cv::Scalar((unsigned char)ball_hueThres[0],(unsigned char)ball_satThres[0],(unsigned char)ball_valThres[0]),
+					cv::Scalar((unsigned char)ball_hueThres[1],(unsigned char)ball_satThres[1],(unsigned char)ball_valThres[1]),
+					mask);
 
         /* Erode away smaller hits */
         cv::erode(mask, mask, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(7,7)));
@@ -34,7 +41,7 @@ cv::Mat boulder_preprocess_pipeline(cv::Mat input, bool suppress_output=false, b
         return edgedet;
 }
 
-scoredContour boulder_pipeline(cv::Mat input, bool suppress_output=false, bool window_output=false) {
+std::vector<scoredContour> boulder_pipeline(cv::Mat input, bool suppress_output, bool window_output) {
     std::vector< std::vector<cv::Point> > contours;
 
     cv::Mat contourOut = input.clone();
@@ -85,9 +92,12 @@ scoredContour boulder_pipeline(cv::Mat input, bool suppress_output=false, bool w
 
 	if(finalscores.size() > 0) {
     	std::sort(finalscores.begin(), finalscores.end(), &scoresort);
+		std::reverse(finalscores.begin(), finalscores.end());
 
-    	return finalscores.back();
+    	return finalscores;
 	} else {
-		return std::make_pair(0.0, std::vector<cv::Point>());	
+		std::vector<scoredContour> ret;
+		ret.push_back(std::make_pair(0.0, std::vector<cv::Point>()));
+		return ret;
 	}
 }

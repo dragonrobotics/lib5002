@@ -9,13 +9,10 @@
 #include <utility>
 #include <iostream>
 
-int hueThres[2] = {70, 100};
-int valThres[2] = {128, 255};
+int goal_hueThres[2] = {70, 100};
+int goal_valThres[2] = {128, 255};
 
-const double cannyThresMin = 10;
-const double cannyThresSize = 10; /* Max = ThresMin + ThresSize */
-
-cv::Mat goal_preprocess_pipeline(cv::Mat input, bool suppress_output=false, bool live_output=false) {
+cv::Mat goal_preprocess_pipeline(cv::Mat input, bool suppress_output, bool live_output) {
         cv::Mat tmp(input.size(), input.type());
 
         cv::cvtColor(input, tmp, CV_BGR2HSV);
@@ -26,7 +23,11 @@ cv::Mat goal_preprocess_pipeline(cv::Mat input, bool suppress_output=false, bool
 
         /* Filter on color/brightness */
         cv::Mat mask(input.size(), CV_8U);
-        cv::inRange(tmp, cv::Scalar((unsigned char)hueThres[0],0,(unsigned char)valThres[0]), cv::Scalar((unsigned char)hueThres[1],255,(unsigned char)valThres[1]), mask);
+        cv::inRange(tmp,
+					cv::Scalar((unsigned char)goal_hueThres[0],0,(unsigned char)goal_valThres[0]),
+					cv::Scalar((unsigned char)goal_hueThres[1],255,(unsigned char)goal_valThres[1]),
+					mask);
+
         /* Erode away smaller hits */
         cv::erode(mask, mask, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5,5)));
 
@@ -38,7 +39,7 @@ cv::Mat goal_preprocess_pipeline(cv::Mat input, bool suppress_output=false, bool
         return edgedet;
 }
 
-scoredContour goal_pipeline(cv::Mat input, bool suppress_output=false) {
+scoredContour goal_pipeline(cv::Mat input, bool suppress_output) {
         std::vector< std::vector<cv::Point> > contours;
 
         cv::Mat contourOut = input.clone();
