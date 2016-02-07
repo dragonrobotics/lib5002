@@ -9,6 +9,7 @@ const int serverPort = 5800;
 
 void disc_server() {
 	serverSocket sock(serverPort, SOCK_DGRAM);
+	std::cout << "Listening on " << sock.getbindaddr() << std::endl;
 
 	while(true) {
 		netmsg msg = sock.recv(0);
@@ -16,6 +17,7 @@ void disc_server() {
 		if(message::is_valid_message(static_cast<void*>(msg.getbuf().get())) {
 			std::shared_ptr<message> msgdata = std::static_pointer_cast(msg.getbuf());
 			if(msgdata->type == message_types::DISCOVER) {
+				std::cout << "Received DISCOVER message from " << msg.addr << std::endl;
 				netmsg out = wrap_packet(discover_msg(discover_msg::origin_t::JETSON), SOCK_DGRAM);
 				out.addr = msg.addr;
 
@@ -58,4 +60,8 @@ void conn_server() {
 			}
 		}			
 	}
+}
+
+int main() {
+	disc_server();
 }

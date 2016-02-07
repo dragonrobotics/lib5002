@@ -1,0 +1,24 @@
+ifndef ARCH
+ARCH := X86
+endif
+
+ARM_TRIPLET := arm-linux-gnueabihf
+X86_TRIPLET := x86_64-linux-gnu
+
+X86CXX := $(X86_TRIPLET)-g++-4.9
+ARMCXX := $(ARM_TRIPLET)-g++-4.9
+
+X86LD := $(X86_TRIPLET)-ld
+ARMLD := $(ARM_TRIPLET)-ld
+
+ifeq ($(ARCH), X86)
+CXX := $(X86CXX)
+LD := $(X86LD)
+endif
+
+ifeq ($(ARCH), ARM)
+CXX := $(ARMCXX)
+LD := $(ARMLD)
+endif
+
+SHELL := /bin/bash
