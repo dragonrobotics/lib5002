@@ -36,7 +36,7 @@ public:
 	
 	/* ----------------------------------------------------------------- */
 	
-	int send(netmsg& packet_out, int flags=0);
+	int send(netmsg packet_out, int flags=0);
 };
 
 class serverSocket {
@@ -90,7 +90,7 @@ public:
 
 	/* ----------------------------------------------------------------- */
 	
-	int send(netmsg& packet_out, int flags=0);
+	int send(netmsg packet_out, int flags=0);
 	
 	/* ----------------------------------------------------------------- */
 

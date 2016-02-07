@@ -21,13 +21,14 @@ public:
 	virtual void frombuffer(void*) =0;
 };
 
-class message {
+struct message {
 	unsigned char	header[4]; 	// '5' '0' '0' '2'
 	message_type	type;		// Message type (see above)
 	unsigned short	size;		// Size of payload
 	unsigned char	data;
 	
 	// total size: 7 bytes header + ?? bytes payload
+
 
 	message() {
 		header[0] = '5';
@@ -42,7 +43,7 @@ class message {
 	}
 
 	static bool is_valid_message(void* in);
-	static netmsg wrap_packet(message_payload& data, int connType);
+	static netmsg wrap_packet(message_payload* data, int connType);
 	std::unique_ptr<message_payload> unwrap_packet();
 };
 

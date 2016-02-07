@@ -17,7 +17,7 @@ netmsg connSocket::recv(int flags) {
 
 /* ----------------------------------------------------------------- */
 
-int connSocket::send(netmsg& packet_out, int flags) {
+int connSocket::send(netmsg packet_out, int flags) {
 	return packet_out.send(fd, flags);
 }
 
@@ -51,7 +51,7 @@ netmsg&& serverSocket::recv(int flags) {
 
 /* ----------------------------------------------------------------- */
 
-int serverSocket::send(netmsg& packet_out, int flags) {
+int serverSocket::send(netmsg packet_out, int flags) {
 	return packet_out.send(fd, flags);
 }
 

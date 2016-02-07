@@ -14,8 +14,8 @@ bool message::is_valid_message(void* in) {
 	);
 }
 
-netmsg message::wrap_packet(message_payload& data, int connType) {
-	void* buffer = new unsigned char[7+data.sizeof_data()];
+netmsg message::wrap_packet(message_payload* data, int connType) {
+	void* buffer = new unsigned char[7+data->sizeof_data()];
 	
 	message* mout = static_cast<message*>(buffer);
 	mout->header[0] = '5';
@@ -23,15 +23,15 @@ netmsg message::wrap_packet(message_payload& data, int connType) {
 	mout->header[2] = '0';
 	mout->header[3] = '2';
 
-	mout->type = data.typeof_data();
-	mout->size = htons(data.sizeof_data());
+	mout->type = data->typeof_data();
+	mout->size = htons(data->sizeof_data());
 	
 	if(mout->size > 0) {
-		std::unique_ptr<unsigned char> dbuf = data.tobuffer();
+		std::unique_ptr<unsigned char> dbuf = data->tobuffer();
 		memcpy(buffer+7, dbuf.get(), mout->size);
 	}
 
-	return netmsg(static_cast<unsigned char*>(buffer), 7+data.sizeof_data(), connType);
+	return netmsg(static_cast<unsigned char*>(buffer), 7+data->sizeof_data(), connType);
 }
 
 std::unique_ptr<message_payload> message::unwrap_packet() {
