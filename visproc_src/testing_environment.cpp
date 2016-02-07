@@ -51,6 +51,7 @@ int main(int argc, char** argv) {
 		cv::namedWindow("stage3");
 		cv::namedWindow("stage4");
 		cv::namedWindow("stage5");
+		cv::namedWindow("contours");
 
 		cvCreateTrackbar("Hue Min", "input", &(ball_hueThres[0]), 179, NULL);
 		cvCreateTrackbar("Hue Max", "input", &(ball_hueThres[1]), 179, NULL);
@@ -72,7 +73,7 @@ int main(int argc, char** argv) {
 
 			cv::imshow("input", src);
 
-			std::vector<scoredContour> out = boulder_pipeline(boulder_preprocess_pipeline(src, true, true), true);
+			std::vector<scoredContour> out = boulder_pipeline(boulder_preprocess_pipeline(src, true, true), true, true);
 
 			cv::Mat output = cv::Mat::zeros(src.size(), CV_8UC3);
 
@@ -109,7 +110,7 @@ int main(int argc, char** argv) {
 		cv::namedWindow("output");
 
 		cv::VideoCapture cap(camID); // open cam 1
-		if(!cap.isOpened())  // check if we succeeded
+		if(!cap.isOpened()/)  // check if we succeeded
 			return -1;
 
 		cv::namedWindow("stage1");
@@ -117,6 +118,7 @@ int main(int argc, char** argv) {
 		cv::namedWindow("stage3");
 		cv::namedWindow("stage4");
 		cv::namedWindow("stage5");
+		cv::namedWindow("contours");
 
 		cvCreateTrackbar("Hue Min", "input", &(goal_hueThres[0]), 179, NULL);
 		cvCreateTrackbar("Hue Max", "input", &(goal_hueThres[1]), 179, NULL);

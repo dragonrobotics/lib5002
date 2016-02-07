@@ -4,14 +4,26 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/videoio.hpp"
+#ifdef VISPROC_BALL_TEST
+#include "opencv2/highgui.hpp"
+#endif
 #include <vector>
 #include <algorithm>
 #include <utility>
 #include <iostream>
 
 int ball_hueThres[2] = {0, 180};
-int ball_satThres[2] = {0, 50};
-int ball_valThres[2] = {90, 255};
+int ball_satThres[2] = {0, 35};
+int ball_valThres[2] = {80, 173};
+const double area_threshold = 500;
+
+#ifdef VISPROC_BALL_TEST
+inline void drawOut(const char* window, cv::Mat out, bool live_out) {
+	if(live_out) { cv::imshow(window, out); }
+}
+#else
+inline void drawOut(const char* window, cv::Mat out, bool live_out) {}
+#endif
 
 cv::Mat boulder_preprocess_pipeline(cv::Mat input, bool suppress_output, bool live_output) {
         cv::Mat tmp(input.size(), input.type());
@@ -20,7 +32,8 @@ cv::Mat boulder_preprocess_pipeline(cv::Mat input, bool suppress_output, bool li
 
         /* Make things easier for the HV filter */
         //cv::blur(tmp, tmp, cv::Size(5,5));
-        cv::GaussianBlur(tmp, tmp, cv::Size(5,5), 2.5, 2.5, cv::BORDER_DEFAULT);
+        cv::GaussianBlur(tmp, tmp, cv::Size(3,3), 1.5, 1.5, cv::BORDER_DEFAULT);
+		drawOut("stage1", tmp, live_output);
 
         /* Filter on saturation and brightness */
         cv::Mat mask(input.size(), CV_8U);
@@ -28,15 +41,19 @@ cv::Mat boulder_preprocess_pipeline(cv::Mat input, bool suppress_output, bool li
 					cv::Scalar((unsigned char)ball_hueThres[0],(unsigned char)ball_satThres[0],(unsigned char)ball_valThres[0]),
 					cv::Scalar((unsigned char)ball_hueThres[1],(unsigned char)ball_satThres[1],(unsigned char)ball_valThres[1]),
 					mask);
+		drawOut("stage2", mask, live_output);
 
-        /* Erode away smaller hits */
-        cv::erode(mask, mask, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(7,7)));
+        /* Dilate away smaller hits */
+        cv::dilate(mask, mask, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5,5)));
+		drawOut("stage3", mask, live_output);
 
         /* Blur for edge detection */
         cv::Mat edgedet;
-        cv::blur(mask, edgedet, cv::Size(9,9));
+        cv::blur(mask, edgedet, cv::Size(7,7));
+		drawOut("stage4", edgedet, live_output);
 
         cv::Canny(edgedet, edgedet, cannyThresMin, cannyThresMin+cannyThresSize);
+		drawOut("stage5", edgedet, live_output);
 
         return edgedet;
 }
@@ -51,6 +68,19 @@ std::vector<scoredContour> boulder_pipeline(cv::Mat input, bool suppress_output,
 
     std::cout << "Found " << contours.size() << " contours." << std::endl;
 
+	if(window_output) {
+		cv::Mat conOut = cv::Mat::zeros(input.size(), CV_8UC3);
+		for(int i=0;i<contours.size();i++) {
+			double area = cv::contourArea(contours[i]);
+			if(area < area_threshold) {
+                continue;
+            }
+			cv::Scalar col(rand()&180, rand()&255, rand()&255);
+			cv::drawContours(conOut, contours, i, col, CV_FILLED, 8);
+		}
+		drawOut("contours", conOut, window_output);
+	}
+
     unsigned int ctr = 0;
     for(std::vector< std::vector<cv::Point> >::iterator i = contours.begin();
         i != contours.end(); ++i) {
@@ -58,8 +88,6 @@ std::vector<scoredContour> boulder_pipeline(cv::Mat input, bool suppress_output,
             double area = cv::contourArea(*i);
             double perimeter = cv::arcLength(*i, true);
             cv::Rect bounds = cv::boundingRect(*i);
-
-            const double area_threshold = 500;
 
             if(area < area_threshold) {
                 continue;

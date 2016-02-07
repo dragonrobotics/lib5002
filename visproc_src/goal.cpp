@@ -4,6 +4,9 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/videoio.hpp"
+#ifdef VISPROC_GOAL_TEST
+#include "opencv2/highgui.hpp"
+#endif
 #include <vector>
 #include <algorithm>
 #include <utility>
@@ -11,6 +14,14 @@
 
 int goal_hueThres[2] = {70, 100};
 int goal_valThres[2] = {128, 255};
+
+#ifdef VISPROC_BALL_TEST
+inline void drawOut(const char* window, cv::Mat out, bool live_out) {
+	if(live_out) { cv::imshow(window, out); }
+}
+#else
+inline void drawOut(const char* window, cv::Mat out, bool live_out) {}
+#endif
 
 cv::Mat goal_preprocess_pipeline(cv::Mat input, bool suppress_output, bool live_output) {
         cv::Mat tmp(input.size(), input.type());
@@ -20,6 +31,7 @@ cv::Mat goal_preprocess_pipeline(cv::Mat input, bool suppress_output, bool live_
         /* Make things easier for the HV filter */
         //cv::blur(tmp, tmp, cv::Size(5,5));
         cv::GaussianBlur(tmp, tmp, cv::Size(5,5), 2.5, 2.5, cv::BORDER_REPLICATE);
+		drawOut("stage1", tmp, live_output);
 
         /* Filter on color/brightness */
         cv::Mat mask(input.size(), CV_8U);
@@ -27,19 +39,24 @@ cv::Mat goal_preprocess_pipeline(cv::Mat input, bool suppress_output, bool live_
 					cv::Scalar((unsigned char)goal_hueThres[0],0,(unsigned char)goal_valThres[0]),
 					cv::Scalar((unsigned char)goal_hueThres[1],255,(unsigned char)goal_valThres[1]),
 					mask);
+		drawOut("stage2", mask, live_output);
 
         /* Erode away smaller hits */
         cv::erode(mask, mask, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5,5)));
+		drawOut("stage3", mask, live_output);
 
         /* Blur for edge detection */
         cv::Mat edgedet;
         cv::blur(mask, edgedet, cv::Size(3,3));
+		drawOut("stage4", edgedet, live_output);
 
         cv::Canny(edgedet, edgedet, cannyThresMin, cannyThresMin+cannyThresSize);
-        return edgedet;
+		drawOut("stage5", edgedet, live_output);        
+
+		return edgedet;
 }
 
-scoredContour goal_pipeline(cv::Mat input, bool suppress_output) {
+scoredContour goal_pipeline(cv::Mat input, bool suppress_output, bool window_output) {
         std::vector< std::vector<cv::Point> > contours;
 
         cv::Mat contourOut = input.clone();
@@ -48,6 +65,16 @@ scoredContour goal_pipeline(cv::Mat input, bool suppress_output) {
         std::vector<scoredContour> finalscores;
 
         if(!suppress_output) { std::cout << "Found " << contours.size() << " contours." << std::endl; }
+
+		if(window_output) {
+			cv::Mat conOut = cv::Mat::zeros(input.size(), CV_8UC3);
+			for(int i=0;i<contours.size();i++) {
+				double area = cv::contourArea(contours[i]);
+				cv::Scalar col(rand()&180, rand()&255, rand()&255);
+				cv::drawContours(conOut, contours, i, col, CV_FILLED, 8);
+			}
+			drawOut("contours", conOut, window_output);
+		}
 
         unsigned int ctr = 0;
         for(std::vector< std::vector<cv::Point> >::iterator i = contours.begin();
