@@ -13,4 +13,4 @@ extern scoredContour goal_pipeline(cv::Mat input, bool suppress_output=false, bo
 
 extern double goal_pipeline_full(cv::Mat input);
 
-
+extern double getDistance(cv::Size targetSize, cv::Size fovSize);
