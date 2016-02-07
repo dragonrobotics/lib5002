@@ -16,8 +16,20 @@ VIS_LIB_FLAGS := -L/usr/local/lib -lopencv_shape -lopencv_stitching -lopencv_obj
 lib5002-vis.a: $(VIS_OBJ_COM_PATH) ./visproc_src/bin/goal.o ./visproc_src/bin/boulder.o
 	$(AR) rvs lib5002-vis.a $^
 
-goalproc: $(VIS_OBJ_COM_PATH) ./visproc_src/bin/testing_environment.o ./visproc_src/bin/goal.o
+./visproc_src/bin/testing_environment_goal.o : ./visproc_src/testing_environment.cpp $(VIS_INC_COM_PATH)
+	$(CXX) --std=c++14 -c -DVISPROC_EXTENDED_TESTING -DVISPROC_GOAL_TEST -o $@ $(VIS_INC_FLAGS) $< 
+
+./visproc_src/bin/testing_environment_ball.o : ./visproc_src/testing_environment.cpp $(VIS_INC_COM_PATH)
+	$(CXX) --std=c++14 -c -DVISPROC_EXTENDED_TESTING -DVISPROC_BALL_TEST -o $@ $(VIS_INC_FLAGS) $<
+
+./visproc_src/bin/testing_environment_basic.o : ./visproc_src/testing_environment.cpp $(VIS_INC_COM_PATH)
+	$(CXX) --std=c++14 -c -DVISPROC_BASIC_TESTING -o $@ $(VIS_INC_FLAGS) $<
+
+goalproc: ./visproc_src/bin/testing_environment_goal.o lib5002-vis.a
 	$(CXX) -o goalproc $^ $(VIS_LIB_FLAGS)
-	
-ballproc: $(VIS_OBJ_COM_PATH) ./visproc_src/bin/testing_environment.o ./visproc_src/bin/boulder.o
+
+goalproc-basic: ./visproc_src/bin/testing_environment_goal.o lib5002-vis.a
+	$(CXX) -o goalproc $^ $(VIS_LIB_FLAGS)	
+
+ballproc: ./visproc_src/bin/testing_environment_ball.o lib5002-vis.a
 	$(CXX) -o ballproc $^ $(VIS_LIB_FLAGS)

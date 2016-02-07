@@ -30,6 +30,7 @@ int main(int argc, char** argv) {
 		if( out.second.size() > 0 ) {
 			cv::Rect bounds = cv::boundingRect(out.second);
 			double dist = getDistance(bounds.size(), src.size());
+			std::cout << "Distance: " << std::tostring(dist) << " inches" << std::endl;
 		}
 	}
 }
@@ -110,7 +111,7 @@ int main(int argc, char** argv) {
 		cv::namedWindow("output");
 
 		cv::VideoCapture cap(camID); // open cam 1
-		if(!cap.isOpened()/)  // check if we succeeded
+		if(!cap.isOpened())  // check if we succeeded
 			return -1;
 
 		cv::namedWindow("stage1");

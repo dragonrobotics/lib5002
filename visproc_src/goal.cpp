@@ -4,9 +4,7 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/videoio.hpp"
-#ifdef VISPROC_GOAL_TEST
 #include "opencv2/highgui.hpp"
-#endif
 #include <vector>
 #include <algorithm>
 #include <utility>
@@ -15,13 +13,9 @@
 int goal_hueThres[2] = {70, 100};
 int goal_valThres[2] = {128, 255};
 
-#ifdef VISPROC_BALL_TEST
 inline void drawOut(const char* window, cv::Mat out, bool live_out) {
 	if(live_out) { cv::imshow(window, out); }
 }
-#else
-inline void drawOut(const char* window, cv::Mat out, bool live_out) {}
-#endif
 
 cv::Mat goal_preprocess_pipeline(cv::Mat input, bool suppress_output, bool live_output) {
         cv::Mat tmp(input.size(), input.type());

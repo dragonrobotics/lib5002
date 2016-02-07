@@ -16,5 +16,5 @@ NET_LIB_FLAGS := -L/usr/local/lib -lopencv_shape -lopencv_stitching -lopencv_obj
 lib5002-net.a: $(NET_OBJ_COM_PATH)
 	$(AR) rvs lib5002-net.a $^
 	
-nettest: $(NET_OBJ_COM_PATH) ./server_src/bin/server.o
+nettest: ./server_src/bin/server.o lib5002-net.a lib5002-vis.a
 	$(CXX) -o nettest $^ $(NET_LIB_FLAGS)
