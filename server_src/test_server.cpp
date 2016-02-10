@@ -1,5 +1,7 @@
 
 #include "sockwrap.h"
+#include "netaddr.h"
+#include "network_bytestream.h"
 #include <arpa/inet.h>
 #include <iostream>
 #include <string>
@@ -13,28 +15,22 @@ int main() {
 
 	while(true) {
 		connSocket dataSock = listenSock.waitForConnection();
-		std::shared_ptr<struct sockaddr> addr = dataSock.getaddr();
-		
-		sockaddr_in *v4addr = reinterpret_cast<sockaddr_in*>(addr.get());
-		char addrstr[INET_ADDRSTRLEN];
-		inet_ntop(AF_INET, static_cast<void*>(v4addr), addrstr, INET_ADDRSTRLEN);
+		netaddr addr = dataSock.getaddr();
 
-		std::cout << "Got connection from " << addrstr << std::endl;
+		std::cout << "Got connection from " << (std::string)addr << std::endl;
 		while(true) {
 			netmsg msg = dataSock.recv();
 			std::cout << "Got data!" << std::endl;
 
-			std::shared_ptr<unsigned char> data = msg.getbuf();			
+			nbstream data = nbstream(msg);	
 
-			std::string s(reinterpret_cast<const char*>(data.get()));
-			std::cout << "Data: " << s << std::endl;			
+			std::string dataStr = data.getNullTermString();
+			std::cout << "[data]: " << dataStr << std::endl;		
 			
-			unsigned char *replydata = new unsigned char[s.length()/*+1*/];
-			strncpy(reinterpret_cast<char*>(replydata),
-				s.c_str(), s.length());
-			//replydata[s.length()] = '\0';
+			nbstream replydata;
+			replydata.putNullTermString(dataStr);
 
-			netmsg reply(replydata, s.length()/*+1*/, SOCK_STREAM);
+			netmsg reply(replydata.tobuf(), replydata.getbufsz(), SOCK_STREAM);
 
 			dataSock.send(reply);
 		}

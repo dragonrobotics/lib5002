@@ -1,24 +1,28 @@
 ifndef ARCH
-ARCH := X86
+ARCH := X86-64
 endif
 
 ARM_TRIPLET := arm-linux-gnueabihf
 X86_TRIPLET := x86_64-linux-gnu
 
-X86CXX := $(X86_TRIPLET)-g++-4.9
+X86-64CXX := $(X86_TRIPLET)-g++-4.9
 ARMCXX := $(ARM_TRIPLET)-g++-4.9
 
-X86LD := $(X86_TRIPLET)-ld
+X86-64LD := $(X86_TRIPLET)-ld
 ARMLD := $(ARM_TRIPLET)-ld
 
-ifeq ($(ARCH), X86)
-CXX := $(X86CXX)
-LD := $(X86LD)
+ifeq ($(ARCH), X86-64)
+CXX := $(X86-64CXX)
+LD := $(X86-64LD)
+OUTDIR := ./bin/x86-64
 endif
 
 ifeq ($(ARCH), ARM)
 CXX := $(ARMCXX)
 LD := $(ARMLD)
+OUTDIR := ./bin/arm
 endif
 
 SHELL := /bin/bash
+
+OUTDIRS += $(OUTDIR)
