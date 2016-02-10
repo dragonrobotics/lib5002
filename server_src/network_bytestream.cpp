@@ -16,12 +16,12 @@ uint64_t netorder64(uint64_t *in) {
 }
 
 std::shared_ptr<unsigned char> nbstream::tobuf() {
-	std::shared_ptr<unsigned char> data(new unsigned char[this->buf.size()]);
+	unsigned char* dbuf = new unsigned char[this->buf.size()];
 	size_t i = 0;
 	for(auto &e : this->buf) {
-		data.get()[i] = e;
+		dbuf[i++] = e;
 	}
-	return data;
+	return std::shared_ptr<unsigned char>(dbuf);
 }
 
 /* ========================================================================= */
@@ -95,7 +95,7 @@ double nbstream::getDouble() {
 /* ========================================================================= */
 
 void nbstream::put8(uint8_t b) {
-	*this->cur++ = (unsigned char)b;
+	this->buf.push_back((unsigned char)b);
 }
 
 void nbstream::put16(uint16_t s) {

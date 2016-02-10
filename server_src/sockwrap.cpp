@@ -10,7 +10,7 @@ netmsg connSocket::recv(size_t bufsz, int flags) {
 
 netmsg connSocket::recv(int flags) {
 	netmsg out(default_buflen, SOCK_STREAM);
-	std::cout << "made netmsg object" << std::endl;
+	//std::cout << "made netmsg object" << std::endl;
 	out.recv(fd, flags);
 	return out;
 }

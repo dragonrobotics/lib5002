@@ -64,7 +64,7 @@ int netmsg::recv(int socket, unsigned int flags) {
 	netlen = -1;
 	
 	if(socktype == SOCK_DGRAM) {
-		std::cout << "doing recvfrom()" << std::endl;
+		//std::cout << "doing recvfrom()" << std::endl;
 		if((netlen = recvfrom(socket,
 			data.get(),
 			buflen,
@@ -75,7 +75,7 @@ int netmsg::recv(int socket, unsigned int flags) {
 				strerror(netlen) << std::endl;
 		}
 	} else if(socktype == SOCK_STREAM) {
-		std::cout << "doing recv()" << std::endl;
+		//std::cout << "doing recv()" << std::endl;
 		if((netlen = ::recv(socket,
 			static_cast<void*>(data.get()),
 			buflen,
