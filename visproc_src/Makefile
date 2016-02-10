@@ -44,4 +44,7 @@ $(OUTDIR)/ballproc: $(VIS_OBJ_OUT_PATH)testing_environment_ball.o $(OUTDIR)/lib5
 lib5002-vis.a: $(OUTDIR)/lib5002-vis.a
 goalproc: $(OUTDIR)/goalproc
 goalproc-basic: $(OUTDIR)/goalproc-basic
-ballproc: $$(OUTDIR)/ballproc
+ballproc: $(OUTDIR)/ballproc
+
+MODULES += lib5002-vis.a
+PROGRAMS += goalproc goalproc-basic ballproc

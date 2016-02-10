@@ -23,8 +23,11 @@ $(NET_OBJ_OUT_PATH)%.o : ./server_src/%.cpp $(NET_INC_COM_PATH)
 $(OUTDIR)/lib5002-net.a: $(NET_OBJ_COM_PATH)
 	$(AR) rvs $(OUTDIR)/lib5002-net.a $^	
 
-$(OUTDIR)/nettest: ./server_src/bin/test_server.o $(OUTDIR)/lib5002-net.a
+$(OUTDIR)/nettest: $(NET_OBJ_OUT_PATH)test_server.o $(OUTDIR)/lib5002-net.a
 	$(CXX) -o $(OUTDIR)/nettest $^ $(NET_LIB_FLAGS)
 
 nettest: $(OUTDIR)/nettest
 lib5002-net.a: $(OUTDIR)/lib5002-net.a
+
+MODULES += lib5002-net.a
+PROGRAMS += nettest
