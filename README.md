@@ -11,7 +11,9 @@ Supports the x86-64 and gnueabihf toolchains.
  * ballproc: Ball processing test.
  * goalproc: Goal processing test.
  * goalproc-basic: Basic goal processing test (no realtime visual output, just console)
- * nettest: Networking test (echo server). Builds for ARM only.
+ * nettest: Networking test (echo server).
+
+Also: the 'outdirs' target will automatically create directories to put output / build files in.
 
 Define ARCH=ARM to enable builds for ARMHF.
 Binaries and library files will be output in the ./bin/ subfolder.
