@@ -48,6 +48,15 @@ class serverSocket {
 	
 public:
 
+	serverSocket(int family = AF_INET, int socktype = SOCK_DGRAM) {
+		fd = -1;
+		this->socktype = socktype;
+		
+		fd = socket(family,
+			socktype,
+			0);
+	}
+
 	serverSocket(unsigned int port, int socktype = SOCK_STREAM) : laddr(port, socktype) {
 		fd = -1;
 		this->socktype = socktype;
@@ -90,8 +99,17 @@ public:
 
 	/* ----------------------------------------------------------------- */
 	
-	int send(netmsg packet_out, int flags=0);
+	int send(netmsg& packet_out, int flags=0);
 	
 	/* ----------------------------------------------------------------- */
+
+	void setBroadcast() {
+		int broadcastEnable = 1;
+		int ret=setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable));
+		if(ret == -1) {
+			std::cerr << "setBroadcast, error with getsockopt(): " << strerror(errno)
+			<< std::endl;
+		}
+	}
 
 };

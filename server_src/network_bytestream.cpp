@@ -27,12 +27,8 @@ std::shared_ptr<unsigned char> nbstream::tobuf() {
 /* ========================================================================= */
 
 nbstream::nbstream(std::shared_ptr<unsigned char> data, size_t size) : buf(data.get(), data.get()+size), cur(buf.begin()) {};
+nbstream::nbstream(void* data, size_t size) : buf((unsigned char*)data, ((unsigned char*)data)+size), cur(buf.begin()) {};
 nbstream::nbstream(netmsg& data) : buf(data.getbuf().get(), data.getbuf().get()+data.getbufsz()), cur(buf.begin()) {};
-nbstream::nbstream(message_payload* data) {
-	std::shared_ptr<unsigned char> d = data->tobuffer();
-	buf = std::vector<unsigned char>(d.get(), d.get()+data->sizeof_data());
-	cur = buf.begin();
-}
 
 uint8_t nbstream::get8() {
 	return uint8_t(*this->cur++);

@@ -38,6 +38,10 @@ int netmsg::send(int socket, unsigned int flags) {
 	netlen = -1;
 	
 	if(socktype == SOCK_DGRAM) {
+		std::cout << "socket: " << socket << std::endl;
+		std::cout << "buflen: " << buflen << std::endl;
+		std::cout << "flags: " << flags << std::endl;
+		std::cout << "addrlen: " <<  addr.len() << std::endl;
 		if((netlen = sendto(socket,
 			static_cast<void*>(data.get()),
 			buflen,
@@ -45,7 +49,7 @@ int netmsg::send(int socket, unsigned int flags) {
 			const_cast<const struct sockaddr*>((sockaddr*)addr),
 			addr.len())) == -1 ) {
 			std::cerr << "sendto(): " <<
-				strerror(netlen) << std::endl;
+				strerror(errno) << std::endl;
 		}
 	} else if(socktype == SOCK_STREAM) {
 		if((netlen = ::send(socket,
@@ -53,7 +57,7 @@ int netmsg::send(int socket, unsigned int flags) {
 			buflen,
 			flags)) == -1 ) {
 			std::cerr << "send(): " <<
-				strerror(netlen) << std::endl;
+				strerror(errno) << std::endl;
 		}
 	}
 	
@@ -72,7 +76,7 @@ int netmsg::recv(int socket, unsigned int flags) {
 			addr,
 			addr.lenptr())) == -1 ) {
 			std::cerr << "recvfrom(): " <<
-				strerror(netlen) << std::endl;
+				strerror(errno) << std::endl;
 		}
 	} else if(socktype == SOCK_STREAM) {
 		//std::cout << "doing recv()" << std::endl;
@@ -81,7 +85,7 @@ int netmsg::recv(int socket, unsigned int flags) {
 			buflen,
 			flags)) == -1 ) {
 			std::cerr << "recv(): ";
-			std::cerr << strerror(netlen) << std::endl;
+			std::cerr << strerror(errno) << std::endl;
 		}
 	}
 

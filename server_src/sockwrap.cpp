@@ -39,19 +39,19 @@ connSocket serverSocket::waitForConnection() {
 
 netmsg&& serverSocket::recv(size_t bufsz, int flags) {
 	netmsg out(bufsz, SOCK_DGRAM);
-	out.recv(fd, flags);
+	out.recv(this->fd, flags);
 	return std::move(out);
 }
 
 netmsg&& serverSocket::recv(int flags) {
 	netmsg out(default_buflen, SOCK_DGRAM);
-	out.recv(fd, flags);
+	out.recv(this->fd, flags);
 	return std::move(out);
 }
 
 /* ----------------------------------------------------------------- */
 
-int serverSocket::send(netmsg packet_out, int flags) {
-	return packet_out.send(fd, flags);
+int serverSocket::send(netmsg& packet_out, int flags) {
+	return packet_out.send(this->fd, flags);
 }
 

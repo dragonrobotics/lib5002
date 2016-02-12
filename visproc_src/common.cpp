@@ -11,7 +11,7 @@ const double fovHoriz = 0.776417; // rad
 const double fovVert = 0.551077; // rad
 
 const double targetWidth = 20.0; // inches
-const double targetHeight = 14.0; // inches
+const double targetHeight = 12.0; // inches
 
 bool scoresort(scoredContour c1, scoredContour c2) {
         return (c1.first < c2.first);

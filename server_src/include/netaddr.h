@@ -34,6 +34,16 @@ public:
 	socklen_t len() { return addrlen; };
 	socklen_t* lenptr() { return &addrlen; };
 
+	void setPort(uint16_t port) {
+		if(this->family() == AF_INET) {
+			sockaddr_in* t = reinterpret_cast<sockaddr_in*>(addr.get());
+			t->sin_port = htons(port);
+		} else if(this->family() == AF_INET6) {
+			sockaddr_in6* t = reinterpret_cast<sockaddr_in6*>(addr.get());
+			t->sin6_port = htons(port);
+		}
+	};
+
 	operator sockaddr*();
 	operator sockaddr_in*();
 	operator sockaddr_in6*();
@@ -44,3 +54,5 @@ public:
 	operator std::shared_ptr<sockaddr_storage>();
 	operator std::string();
 };
+
+netaddr getbroadcast();

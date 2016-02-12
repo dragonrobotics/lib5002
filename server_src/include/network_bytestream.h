@@ -3,7 +3,6 @@
 #include <string>
 #include <arpa/inet.h>
 #include "netmsg.h"
-#include "msgtype.h"
 
 extern uint64_t netorder64(uint64_t *in);
 
@@ -15,8 +14,8 @@ public:
 
 	nbstream() : cur(buf.begin()) {};
 	nbstream(std::shared_ptr<unsigned char> data, size_t size);
+	nbstream(void* data, size_t size);
 	nbstream(netmsg& data);
-	nbstream(message_payload* data);
 
 	std::shared_ptr<unsigned char> tobuf();
 	size_t getbufsz() { return buf.size(); };

@@ -1,6 +1,69 @@
 #include "netaddr.h"
 #include <memory>
 #include <arpa/inet.h>
+#include <sys/types.h>
+#include <ifaddrs.h>
+#include <net/if.h>
+
+netaddr getbroadcast() {
+	struct ifaddrs *ifa_list = nullptr;
+
+	if (getifaddrs(&ifa_list) == -1) {
+	   perror("getifaddrs");
+	   exit(EXIT_FAILURE);
+	}
+
+	for (ifaddrs* ifa = ifa_list; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr == NULL)
+		   continue;
+
+		netaddr ifaddr;
+
+		if(ifa->ifa_addr->sa_family == AF_INET) {
+			std::shared_ptr<sockaddr> addr(new sockaddr);
+			memcpy(static_cast<void*>(addr.get()), static_cast<void*>(ifa->ifa_addr), sizeof(sockaddr));
+
+			ifaddr = netaddr(addr, sizeof(sockaddr_in));
+		} else if(ifa->ifa_addr->sa_family == AF_INET6) {
+			std::shared_ptr<sockaddr> addr(new sockaddr);
+			memcpy(static_cast<void*>(addr.get()), static_cast<void*>(ifa->ifa_addr), sizeof(sockaddr));
+
+			ifaddr = netaddr(addr, sizeof(sockaddr_in6));
+		}
+
+		//std::cout << "Inspecting " << ifa->ifa_name << " with " + std::string(ifaddr.family() == AF_INET ? "IPv4" : "IPv6") + " address " << (std::string)ifaddr << std::endl;
+
+		if( ((ifa->ifa_flags & IFF_UP) > 0) &&
+			((ifa->ifa_flags & IFF_BROADCAST) > 0) &&
+			((ifa->ifa_flags & IFF_RUNNING) > 0) &&
+			((ifa->ifa_flags & IFF_LOOPBACK) == 0) &&
+			((std::string)ifaddr != "bad address")) { // that last check is really hacky, maybe change it?
+
+			//std::cout << "interface /looks/ valid" << std::endl;
+
+			if(ifa->ifa_broadaddr->sa_family == AF_INET) {
+				sockaddr_in* addr = new sockaddr_in;
+				*addr = *reinterpret_cast<sockaddr_in*>(ifa->ifa_broadaddr);
+
+				netaddr ret(addr);
+				freeifaddrs(ifa_list);
+				return ret;
+			} else if(ifa->ifa_broadaddr->sa_family == AF_INET6) {
+				sockaddr_in6* addr = new sockaddr_in6;
+				*addr = *reinterpret_cast<sockaddr_in6*>(ifa->ifa_broadaddr);
+
+				netaddr ret(addr);
+				freeifaddrs(ifa_list);
+				return ret;
+			}
+		}
+	}
+
+	//std::cout << "exiting getbroadcast" << std::endl;
+
+	freeifaddrs(ifa_list);
+	return netaddr();
+}
 
 netaddr::netaddr(std::string host, int type) {
 	std::unique_ptr<struct addrinfo, freeaddrinfo_proto> saddr(nullptr, &freeaddrinfo);
@@ -102,14 +165,12 @@ netaddr::operator std::shared_ptr<sockaddr_storage>() {
 }
 
 netaddr::operator std::string() {
-	if(this->family() == AF_INET) {
-		char addrstr[INET_ADDRSTRLEN];
-		inet_ntop(AF_INET, reinterpret_cast<void*>(addr.get()), addrstr, INET_ADDRSTRLEN);
-		return std::string(addrstr);
-	} else if(this->family() == AF_INET6) {
-		char addrstr[INET6_ADDRSTRLEN];
-		inet_ntop(AF_INET6, reinterpret_cast<void*>(addr.get()), addrstr, INET6_ADDRSTRLEN);
-		return std::string(addrstr);
+	std::unique_ptr<char> hostbuf(new char[NI_MAXHOST]);
+
+	if(getnameinfo(this->addr.get(), this->addrlen, hostbuf.get(), NI_MAXHOST, NULL, 0, NI_NUMERICHOST)) {
+		return std::string("bad address");	
 	}
+
+	return std::string(hostbuf.get());
 }
 

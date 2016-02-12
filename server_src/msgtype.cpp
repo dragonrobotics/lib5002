@@ -15,8 +15,10 @@ bool message::is_valid_message(void* in) {
 }
 
 netmsg message::wrap_packet(message_payload* data, int connType) {
-	void* buffer = new unsigned char[7+data->sizeof_data()];
-	
+	nbstream stream;
+	data->tobuffer(stream);
+
+	void* buffer = new unsigned char[7+stream.getbufsz()];
 	message* mout = static_cast<message*>(buffer);
 	mout->header[0] = '5';
 	mout->header[1] = '0';
@@ -24,33 +26,34 @@ netmsg message::wrap_packet(message_payload* data, int connType) {
 	mout->header[3] = '2';
 
 	mout->type = data->typeof_data();
-	mout->size = htons(data->sizeof_data());
+	mout->size = htons(stream.getbufsz());
 	
 	if(mout->size > 0) {
-		std::unique_ptr<unsigned char> dbuf = data->tobuffer();
-		memcpy(buffer+7, dbuf.get(), mout->size);
+		std::shared_ptr<unsigned char> dbuf = stream.tobuf();
+		memcpy(buffer+7, dbuf.get(), stream.getbufsz());
 	}
 
-	return netmsg(static_cast<unsigned char*>(buffer), 7+data->sizeof_data(), connType);
+	return netmsg(static_cast<unsigned char*>(buffer), 7+stream.getbufsz(), connType);
 }
 
 std::unique_ptr<message_payload> message::unwrap_packet() {
 	std::unique_ptr<message_payload> out;
+	nbstream stream(this->get_data_start(), (uint32_t)ntohs(this->size));
 	switch(this->type) {	
 		case message_type::GET_GOAL_DISTANCE:
 		{
 			out.reset(new get_goal_distance_msg);
-			out->frombuffer(this->get_data_start());
+			out->frombuffer(stream);
 		}
 		case message_type::GOAL_DISTANCE:
 		{
 			out.reset(new goal_distance_msg);
-			out->frombuffer(this->get_data_start());
+			out->frombuffer(stream);
 		}			
 		case message_type::DISCOVER:
 		{
 			out.reset(new discover_msg);
-			out->frombuffer(this->get_data_start());
+			out->frombuffer(stream);
 		}
 		case message_type::GET_STATUS: /* Not implemented. */
 		case message_type::STATUS:
@@ -76,45 +79,14 @@ goal_distance_msg::goal_distance_msg(double dist, double sc) :
 	}
 }
 
-size_t goal_distance_msg::sizeof_data() {
-	std::string dstr = std::to_string(distance);
-	std::string sstr = std::to_string(score);
-	
-	unsigned short dlen = dstr.length()+1;
-	unsigned short slen = sstr.length()+1;
-	
-	return dlen+slen+5;
+void goal_distance_msg::tobuffer(nbstream& stream) {
+	stream.put8(static_cast<uint8_t>(status));	
+	stream.putDouble(distance);
+	stream.putDouble(score);
 }
 
-std::unique_ptr<unsigned char> goal_distance_msg::tobuffer() {
-	std::string dstr = std::to_string(distance);
-	std::string sstr = std::to_string(score);
-	
-	unsigned short dlen = dstr.length()+1;
-	unsigned short slen = sstr.length()+1;
-	
-	void* data = new unsigned char[dlen+slen+5];
-	
-	*static_cast<unsigned char*>(data) = static_cast<unsigned char>(status);
-	*static_cast<unsigned short*>(data+1) = htons(dlen);
-	*static_cast<unsigned short*>(data+3+dlen) = htons(slen);
-	
-	dstr.copy(static_cast<char*>(data+3),
-	dstr.length());
-	*static_cast<char*>(data+3+dstr.length()) = '\0';
-	
-	sstr.copy(static_cast<char*>(data+3+dlen+2),
-	sstr.length());
-	*static_cast<char*>(data+3+dlen+2+sstr.length()) = '\0';
-	
-	return std::unique_ptr<unsigned char>(static_cast<unsigned char*>(data));
-}
-
-void goal_distance_msg::frombuffer(void* data) {
-	status = static_cast<goal_status>(*static_cast<unsigned char*>(data));
-	unsigned short dlen = ntohs(*static_cast<unsigned short*>(data+1));
-	unsigned short slen = ntohs(*static_cast<unsigned short*>(data+dlen+3));
-	
-	distance = std::stod(std::string(static_cast<char*>(data+3), dlen-1));
-	score = std::stod(std::string(static_cast<char*>(data+dlen+5), slen-1));
+void goal_distance_msg::frombuffer(nbstream& stream) {
+	status = static_cast<goal_status>(stream.get8());
+	distance = stream.getDouble();
+	score = stream.getDouble();
 }
