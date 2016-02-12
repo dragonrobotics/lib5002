@@ -12,7 +12,7 @@ class nbstream {
 	
 public:
 
-	nbstream() : cur(buf.begin()) {};
+	nbstream() : buf(), cur(buf.begin()) {};
 	nbstream(std::shared_ptr<unsigned char> data, size_t size);
 	nbstream(void* data, size_t size);
 	nbstream(netmsg& data);

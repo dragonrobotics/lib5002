@@ -15,12 +15,16 @@ ifeq ($(ARCH), X86-64)
 CXX := $(X86-64CXX)
 LD := $(X86-64LD)
 OUTDIR := ./bin/x86-64
+OPENCV-DIR := /usr/local/lib
+OPENCV-3RDPARTY-DIR := /usr/local/share/OpenCV/3rdparty/lib
 endif
 
 ifeq ($(ARCH), ARM)
 CXX := $(ARMCXX)
 LD := $(ARMLD)
 OUTDIR := ./bin/arm
+OPENCV-DIR := /usr/local/arm-linux-gnueabihf/lib
+OPENCV-3RDPARTY-DIR := /usr/local/arm-linux-gnueabihf/share/OpenCV/3rdparty/lib
 endif
 
 SHELL := /bin/bash

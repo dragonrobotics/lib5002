@@ -18,6 +18,8 @@ public:
 
 	connSocket(int f, sockaddr* ad, size_t adl) : fd(f), addr(ad, adl) {};
 	connSocket(int f, netaddr ad) : fd(f), addr(ad) {};
+	connSocket(connSocket&& rhs) : addr(rhs.addr), fd(rhs.fd) { rhs.addr = netaddr(); rhs.fd = -1; };
+	connSocket(const connSocket& rhs) = delete;
 
 	~connSocket() {
 		if(fd != -1) {
@@ -28,6 +30,7 @@ public:
 	/* ----------------------------------------------------------------- */
 	
 	netaddr getaddr() { return addr; };
+	int getfd() { return fd; };
 
 	/* ----------------------------------------------------------------- */
 	
@@ -77,6 +80,9 @@ public:
 			<< std::endl;
 		}
 	}
+
+	serverSocket(const serverSocket& rhs) = delete;
+	serverSocket(serverSocket&& rhs) : laddr(rhs.laddr), fd(rhs.fd) { rhs.laddr = netaddr(); rhs.fd = -1; };
 	
 	~serverSocket() {
 		if(fd != -1) {
@@ -87,6 +93,7 @@ public:
 	/* ----------------------------------------------------------------- */
 
 	netaddr getbindaddr() { return laddr; };
+	int getfd() { return fd; };
 
 	/* ----------------------------------------------------------------- */
 

@@ -24,7 +24,7 @@ public:
 struct message {
 	unsigned char	header[4]; 	// '5' '0' '0' '2'
 	message_type	type;		// Message type (see above)
-	unsigned short	size;		// Size of payload
+	uint16_t		size;		// Size of payload
 	unsigned char	data;
 	
 	// total size: 7 bytes header + ?? bytes payload
@@ -38,14 +38,14 @@ struct message {
 	}
 
 	void* get_data_start() {
-		void* out = static_cast<void*>(this);
+		void* out = static_cast<void*>(&(this->header[0]));
 		return out+7;
 	}
 
 	static bool is_valid_message(void* in);
 	static netmsg wrap_packet(message_payload* data, int connType);
 	std::unique_ptr<message_payload> unwrap_packet();
-};
+} __attribute__((packed));
 
 enum class origin_t : unsigned char {
 	DRIVER_STATION = 0,
@@ -96,8 +96,8 @@ struct goal_distance_msg : public message_payload {
 	double distance;
 	double score;
 	
-	goal_distance_msg() : distance(0), score(0) {};
-	goal_distance_msg(double dist, double sc);
+	goal_distance_msg() : status(goal_status::GOAL_NOT_FOUND), distance(0), score(0) {};
+	goal_distance_msg(bool stat, double dist, double sc);
 	message_type typeof_data() { return message_type::GOAL_DISTANCE; };
 	void tobuffer(nbstream& stream);
 	void frombuffer(nbstream& stream);

@@ -1,4 +1,7 @@
 #include "msgtype.h"
+
+#include <iostream>
+
 /* ----------------------------------------------------------------- */
 /*						class message								 */
 /* ----------------------------------------------------------------- */
@@ -18,6 +21,8 @@ netmsg message::wrap_packet(message_payload* data, int connType) {
 	nbstream stream;
 	data->tobuffer(stream);
 
+	std::cout << "Packet size: 0x" << std::hex << stream.getbufsz() << std::endl;
+
 	void* buffer = new unsigned char[7+stream.getbufsz()];
 	message* mout = static_cast<message*>(buffer);
 	mout->header[0] = '5';
@@ -32,6 +37,8 @@ netmsg message::wrap_packet(message_payload* data, int connType) {
 		std::shared_ptr<unsigned char> dbuf = stream.tobuf();
 		memcpy(buffer+7, dbuf.get(), stream.getbufsz());
 	}
+
+	std::cout << "(network order: 0x" << mout->size << std::dec << ")" << std::endl; 
 
 	return netmsg(static_cast<unsigned char*>(buffer), 7+stream.getbufsz(), connType);
 }
@@ -70,9 +77,9 @@ std::unique_ptr<message_payload> message::unwrap_packet() {
 /*						class goal_distance_msg						 */
 /* ----------------------------------------------------------------- */
 
-goal_distance_msg::goal_distance_msg(double dist, double sc) :
+goal_distance_msg::goal_distance_msg(bool stat, double dist, double sc) :
 	distance(dist), score(sc) {
-	if(dist > 0) {
+	if(stat) {
 		status = goal_status::GOAL_FOUND;
 	} else {
 		status = goal_status::GOAL_NOT_FOUND;

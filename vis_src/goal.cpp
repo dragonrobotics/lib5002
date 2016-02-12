@@ -14,8 +14,9 @@ int goal_hueThres[2] = {70, 100};
 int goal_valThres[2] = {128, 255};
 
 inline void drawOut(const char* window, cv::Mat out, bool live_out) {
-	if(live_out) { cv::imshow(window, out); }
+	//if(live_out) { cv::imshow(window, out); }
 }
+
 
 cv::Mat goal_preprocess_pipeline(cv::Mat input, bool suppress_output, bool live_output) {
         cv::Mat tmp(input.size(), input.type());
