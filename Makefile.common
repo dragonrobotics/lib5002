@@ -23,8 +23,8 @@ ifeq ($(ARCH), ARM)
 CXX := $(ARMCXX)
 LD := $(ARMLD)
 OUTDIR := ./bin/arm
-OPENCV-DIR := /usr/local/arm-linux-gnueabihf/lib
-OPENCV-3RDPARTY-DIR := /usr/local/arm-linux-gnueabihf/share/OpenCV/3rdparty/lib
+OPENCV-DIR := /usr/arm-linux-gnueabihf/lib
+OPENCV-3RDPARTY-DIR := /usr/arm-linux-gnueabihf/share/OpenCV/3rdparty/lib
 endif
 
 SHELL := /bin/bash
