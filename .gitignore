@@ -29,10 +29,7 @@
 
 *.log
 
-./obj
-visproc
-ballproc
-goalproc
-obsdet
-nettest
+obj/*
+bin/*
 *.png
+*~
