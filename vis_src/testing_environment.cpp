@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 		if( out.second.size() > 0 ) {
 			cv::Rect bounds = cv::boundingRect(out.second);
 			double dist = getDistance(bounds.size(), src.size());
-			std::cout << "Distance: " << std::tostring(dist) << " inches" << std::endl;
+			std::cout << "Distance: " << std::to_string(dist) << " inches" << std::endl;
 		}
 	}
 }

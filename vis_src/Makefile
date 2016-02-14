@@ -41,8 +41,8 @@ $(VIS_OBJ_OUT_PATH)testing_environment_basic.o : ./vis_src/testing_environment.c
 $(OUTDIR)/goalproc: $(VIS_OBJ_OUT_PATH)testing_environment_goal.o $(OUTDIR)/lib5002-vis.so
 	$(CXX) -o $(OUTDIR)/goalproc $^ $(VIS_LIB_FLAGS)
 
-$(OUTDIR)/goalproc-basic: $(VIS_OBJ_OUT_PATH)testing_environment_goal.o $(OUTDIR)/lib5002-vis.so
-	$(CXX) -o $(OUTDIR)/goalproc $^ $(VIS_LIB_FLAGS)	
+$(OUTDIR)/goalproc-basic: $(VIS_OBJ_OUT_PATH)testing_environment_basic.o $(OUTDIR)/lib5002-vis.so
+	$(CXX) -o $(OUTDIR)/goalproc-basic $^ $(VIS_LIB_FLAGS)
 
 $(OUTDIR)/ballproc: $(VIS_OBJ_OUT_PATH)testing_environment_ball.o $(OUTDIR)/lib5002-vis.so
 	$(CXX) -o $(OUTDIR)/ballproc $^ $(VIS_LIB_FLAGS)
