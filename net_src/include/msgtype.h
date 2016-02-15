@@ -11,7 +11,8 @@ enum class message_type : unsigned char {
 	STATUS = 2,
 	GET_GOAL_DISTANCE = 3,
 	GOAL_DISTANCE = 4,
-	DISCOVER = 5
+	DISCOVER = 5,
+	VIDEO_STREAM = 6,
 };
 
 class message_payload {
@@ -99,6 +100,25 @@ struct goal_distance_msg : public message_payload {
 	goal_distance_msg() : status(goal_status::GOAL_NOT_FOUND), distance(0), score(0) {};
 	goal_distance_msg(bool stat, double dist, double sc);
 	message_type typeof_data() { return message_type::GOAL_DISTANCE; };
+	void tobuffer(nbstream& stream);
+	void frombuffer(nbstream& stream);
+};
+
+struct video_stream_msg : public message_payload { // TODO: Maybe add compression of some kind?
+	/*
+	Actual Binary Stream Layout:
+
+	unsigned short xSize		: 
+	unsigned short ySize		: sizes as returned by Mat::size().(x/y)
+	unsigned int openCVType		: type as returned by Mat::type()
+	void *videoData			: Raw video data, continuously stored (row 0, then row 1 immediately after)
+
+	*/
+
+	cv::Mat img;
+
+	video_stream_msg(cv::Mat transMat) : img(transMat);
+	message_type typeof_data() { return message_type::VIDEO_STREAM; };
 	void tobuffer(nbstream& stream);
 	void frombuffer(nbstream& stream);
 };
