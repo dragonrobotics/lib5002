@@ -104,21 +104,3 @@ struct goal_distance_msg : public message_payload {
 	void frombuffer(nbstream& stream);
 };
 
-struct video_stream_msg : public message_payload { // TODO: Maybe add compression of some kind?
-	/*
-	Actual Binary Stream Layout:
-
-	unsigned short xSize		: 
-	unsigned short ySize		: sizes as returned by Mat::size().(x/y)
-	unsigned int openCVType		: type as returned by Mat::type()
-	void *videoData			: Raw video data, continuously stored (row 0, then row 1 immediately after)
-
-	*/
-
-	cv::Mat img;
-
-	video_stream_msg(cv::Mat transMat) : img(transMat);
-	message_type typeof_data() { return message_type::VIDEO_STREAM; };
-	void tobuffer(nbstream& stream);
-	void frombuffer(nbstream& stream);
-};

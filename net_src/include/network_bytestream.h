@@ -3,6 +3,7 @@
 #include <string>
 #include <arpa/inet.h>
 #include "netmsg.h"
+#include <stdint.h>
 
 extern uint64_t netorder64(uint64_t *in);
 
@@ -21,7 +22,7 @@ public:
 	size_t getbufsz() { return buf.size(); };
 
 	unsigned char* getrawptr() { return buf.data(); };
-	void setbufsz(size_t sz) { ptrdiff_t pos = cur - buf.begin(); buf.reserve(sz); cur = buf.begin()+pos; };
+	void setbufsz(size_t sz) { std::ptrdiff_t pos = cur - buf.begin(); buf.reserve(sz); cur = buf.begin()+pos; };
 
 	uint8_t get8();
 	uint16_t get16();

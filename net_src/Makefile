@@ -20,6 +20,15 @@ $(NET_OBJ_OUT_PATH):
 $(NET_OBJ_OUT_PATH)%.o : ./net_src/%.cpp $(NET_INC_COM_PATH)
 	$(CXX) --std=c++14 -fPIC -c -o $@ $(NET_INC_FLAGS) -Wno-pointer-arith $<
 
+$(NET_OBJ_OUT_PATH)video_stream.o : ./net_src/video_stream.cpp ./net_src/include/video_stream.h $(NET_INC_COM_PATH)
+	$(CXX) --std=c++14 -fPIC -c -o $@ $(NET_INC_FLAGS) $(VIS_INC_FLAGS) -Wno-pointer-arith $<
+
+$(NET_OBJ_OUT_PATH)wpilib_cameraserver.o : ./net_src/wpilib_cameraserver.cpp ./net_src/include/wpilib_cameraserver.h $(NET_INC_COM_PATH)
+	$(CXX) --std=c++14 -fPIC -c -o $@ $(NET_INC_FLAGS) $(VIS_INC_FLAGS) -Wno-pointer-arith $<
+
+$(OUTDIR)/lib5002-stream.so: $(NET_OBJ_OUT_PATH)video_stream.o $(NET_OBJ_OUT_PATH)wpilib_cameraserver.o
+	$(CXX) --std=c++14 -fPIC -shared -o $(OUTDIR)/lib5002-stream.so $^	
+
 $(OUTDIR)/lib5002-net.so: $(NET_OBJ_COM_PATH)
 	$(CXX) --std=c++14 -fPIC -shared -o $(OUTDIR)/lib5002-net.so $^	
 
@@ -32,6 +41,7 @@ $(OUTDIR)/nettest: $(NET_OBJ_OUT_PATH)test_server.o $(OUTDIR)/lib5002-net.so
 disctest: $(OUTDIR)/disctest
 nettest: $(OUTDIR)/nettest
 lib5002-net.so: $(OUTDIR)/lib5002-net.so
+lib5002-stream.so: $(OUTDIR)/lib5002-stream.so
 
-MODULES += lib5002-net.so
+MODULES += lib5002-net.so lib5002-stream.so
 PROGRAMS += nettest disctest

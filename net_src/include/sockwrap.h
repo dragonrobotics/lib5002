@@ -16,6 +16,7 @@ class connSocket {
 
 public:
 
+	connSocket(netaddr connectTo);
 	connSocket(int f, sockaddr* ad, size_t adl) : fd(f), addr(ad, adl) {};
 	connSocket(int f, netaddr ad) : fd(f), addr(ad) {};
 	connSocket(connSocket&& rhs) : addr(rhs.addr), fd(rhs.fd) { rhs.addr = netaddr(); rhs.fd = -1; };

@@ -1,6 +1,20 @@
 #include "sockwrap.h"
 
 /* ----------------------------------------------------------------- */
+
+connSocket::connSocket(netaddr connectTo) {
+	addr = connectTo;
+
+	fd = -1;
+
+	if((fd = socket(connectTo.family(), SOCK_STREAM, 0)) == -1) {
+		std::cerr << "[connSocket] socket(): " << strerror(errno) << std::endl;
+	} else {
+		connect(fd, connectTo, connectTo.len());
+	}
+}
+
+/* ----------------------------------------------------------------- */
 	
 netmsg connSocket::recv(size_t bufsz, int flags) {
 	netmsg out(bufsz, SOCK_STREAM);
@@ -22,7 +36,7 @@ int connSocket::send(netmsg packet_out, int flags) {
 }
 
 /* ----------------------------------------------------------------- */
-/*							serverSocket							 */
+/*				serverSocket    		     */
 /* ----------------------------------------------------------------- */
 
 connSocket serverSocket::waitForConnection() {

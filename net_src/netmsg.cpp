@@ -38,10 +38,10 @@ int netmsg::send(int socket, unsigned int flags) {
 	netlen = -1;
 	
 	if(socktype == SOCK_DGRAM) {
-		std::cout << "socket: " << socket << std::endl;
-		std::cout << "buflen: " << buflen << std::endl;
-		std::cout << "flags: " << flags << std::endl;
-		std::cout << "addrlen: " <<  addr.len() << std::endl;
+		//std::cout << "socket: " << socket << std::endl;
+		//std::cout << "buflen: " << buflen << std::endl;
+		//std::cout << "flags: " << flags << std::endl;
+		//std::cout << "addrlen: " <<  addr.len() << std::endl;
 		if((netlen = sendto(socket,
 			static_cast<void*>(data.get()),
 			buflen,
