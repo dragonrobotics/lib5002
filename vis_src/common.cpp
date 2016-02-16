@@ -68,3 +68,11 @@ std::pair<double, double> getRelativeAngleOffCenter(scoredContour object, cv::Si
 
 	return out;
 }
+
+double getAngleOffCenterline(cv::Size targetSz, cv::Size obsSz) {
+	double AStgt = obsSz.width / obsSz.height;
+	
+	double ASdiff = ((obsSz.width - 1) / obsSz.height) / (targetSz.width / targetSz.height);  //  ((AStgt - (1 / obsSz.height)) / (obsSz.width / obsSz.height));
+
+	return 90.0 * ASdiff;
+}

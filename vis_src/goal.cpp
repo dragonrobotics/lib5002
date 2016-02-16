@@ -4,20 +4,55 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/videoio.hpp"
-#include "opencv2/highgui.hpp"
 #include <vector>
 #include <algorithm>
 #include <utility>
 #include <iostream>
 
-int goal_hueThres[2] = {70, 100};
-int goal_valThres[2] = {128, 255};
+/*! \file goal.cpp
+ *  \brief Contains goal processing functions (for 2016)
+ */
 
-inline void drawOut(const char* window, cv::Mat out, bool live_out) {
-	//if(live_out) { cv::imshow(window, out); }
-}
+const cv::Size goalSz(20.0, 12.0); // width, height -- TODO: Make sure this is correct!
+const double goalAS = goalSz.width / goalSz.height;
 
+/*
+TODO:
 
+ * Motion / Differential analysis? 
+ *
+ * Return:
+ * - Robot position relative to target. 
+ *  > Distance
+ *  > Angle left / right (0=centered)
+ * 
+ * Angle left / right:
+ * - Find intensity profile?
+ * - Calculate observed aspect ratio vs ideal aspect ratio?
+
+ * theta = angle off center horizontally, rho = angle off center vertically
+ 
+ * - At theta = 0, observed aspect ratio = ideal aspect ratio
+ * - Observed aspect ratio goes to (1 / height) as angle off centerline goes to +-90.
+ * - Ratio between ASes goes to ((1/height) / (ideal width / ideal height)) = (1 / ideal width) as theta goes to +- 90.
+
+ * - At rho = 0, observed aspect ratio = ideal aspect ratio
+ * - Observed AS goes to (width) as rho goes to +- 90
+ * - Ratio between ASes goes to (width / (width / height)) = (height) as rho goes to +- 90.
+
+ * Send on-target alert.
+ */
+
+int goal_hueThres[2] = {70, 100};	//!< Hue thresholds (min, max) for detecting goal retroreflective tape.
+int goal_valThres[2] = {128, 255};	//!< Value thesholds for detecting goals.
+
+/*!	\fn goal_preprocess_pipeline(cv::Mat input, bool suppress_output, bool live_output)
+ *	\brief Filter and edge-detect an image, searching for goals.
+ *
+ *	\param input Input frame.
+ *	\param suppress_output If false, then debugging data is written to stdout.
+ *	\param live_output If true, then intermediate pipeline image streams are output to GUI windows.
+ */
 cv::Mat goal_preprocess_pipeline(cv::Mat input, bool suppress_output, bool live_output) {
         cv::Mat tmp(input.size(), input.type());
 
@@ -51,6 +86,13 @@ cv::Mat goal_preprocess_pipeline(cv::Mat input, bool suppress_output, bool live_
 		return edgedet;
 }
 
+/*!	\fn goal_pipeline(cv::Mat input, bool suppress_output, bool live_output)
+ *	\brief Score and retrieve the best seeming goal from a preprocessed image.
+ *
+ *	\param input Input frame.
+ *	\param suppress_output If false, then debugging data is written to stdout.
+ *	\param live_output If true, then intermediate pipeline image streams are output to GUI windows.
+ */
 scoredContour goal_pipeline(cv::Mat input, bool suppress_output, bool window_output) {
         std::vector< std::vector<cv::Point> > contours;
 
@@ -78,11 +120,10 @@ scoredContour goal_pipeline(cv::Mat input, bool suppress_output, bool window_out
                 double perimeter = cv::arcLength(*i, true);
                 cv::Rect bounds = cv::boundingRect(*i);
 
-                const double cvarea_target = (80.0/240.0);
-                const double asratio_target = (20.0/12.0);
+                const double cvarea_target = (80.0 / (goalSz.width * goalSz.height)); //(80.0/240.0);
                 const double area_threshold = 1000;
 
-                /* Area Thresholding Test
+                /*! Area Thresholding Test
                  * Only accept contours of a certain total size.
                  */
 
@@ -90,15 +131,15 @@ scoredContour goal_pipeline(cv::Mat input, bool suppress_output, bool window_out
                     continue;
                 }
 
-				if(!suppress_output) {
-					std::cout << std::endl;
-			        std::cout << "Contour " << ctr << ": " << std::endl;
-			        ctr++;
-			        std::cout << "Area: "  << area << std::endl;
-			        std::cout << "Perimeter: " << perimeter << std::endl;
-				}
+		if(!suppress_output) {
+			std::cout << std::endl;
+			std::cout << "Contour " << ctr << ": " << std::endl;
+			ctr++;
+			std::cout << "Area: "  << area << std::endl;
+			std::cout << "Perimeter: " << perimeter << std::endl;
+		}
 
-                /* Coverage Area Test
+                /*! Coverage Area Test
                  * Compare particle area vs. Bounding Rectangle area.
                  * score = 1 / abs((1/3)- (particle_area / boundrect_area))
                  * Score decreases linearly as coverage area tends away from 1/3. */
@@ -107,22 +148,22 @@ scoredContour goal_pipeline(cv::Mat input, bool suppress_output, bool window_out
                 double coverage_area = area / bounds.area();
                 cvarea_score = scoreDistanceFromTarget(cvarea_target, coverage_area);
 
-                /* Aspect Ratio Test
+                /*! Aspect Ratio Test
                  * Computes aspect ratio of detected objects.
                  */
 
                 double tmp = bounds.width;
                 double aspect_ratio = tmp / bounds.height;
-                double ar_score = scoreDistanceFromTarget(asratio_target, aspect_ratio);
+                double ar_score = scoreDistanceFromTarget(goalAS, aspect_ratio);
 
-                /* Image Moment Test
+                /*! Image Moment Test
                  * Computes image moments and compares it to known values.
                  */
 
                 cv::Moments m = cv::moments(*i);
                 double moment_score = scoreDistanceFromTarget(0.28, m.nu02);
 
-                /* Image Orientation Test
+                /*! Image Orientation Test
                  * Computes angles off-axis or contours.
                  */
                 // theta = (1/2)atan2(mu11, mu20-mu02) radians
@@ -130,31 +171,31 @@ scoredContour goal_pipeline(cv::Mat input, bool suppress_output, bool window_out
                 double theta = (atan2(m.mu11,m.mu20-m.mu02) * 90) / pi;
                 double angle_score = (90 - fabs(theta))+10;
 
-				if(!suppress_output) {
-		            std::cout << "nu-02: " << m.nu02 << std::endl;
-		            std::cout << "CVArea: "  <<  coverage_area << std::endl;
-		            std::cout << "AsRatio: " << aspect_ratio << std::endl;
-		            std::cout << "Orientation: " << theta << std::endl;
-				}
+		if(!suppress_output) {
+		    std::cout << "nu-02: " << m.nu02 << std::endl;
+		    std::cout << "CVArea: "  <<  coverage_area << std::endl;
+		    std::cout << "AsRatio: " << aspect_ratio << std::endl;
+		    std::cout << "Orientation: " << theta << std::endl;
+		}
 
                 double total_score = (moment_score + cvarea_score + ar_score + angle_score) / 4;
 
-				if(!suppress_output) {
-		            std::cout << "CVArea Score: "  <<  cvarea_score << std::endl;
-		            std::cout << "AsRatio Score: " << ar_score << std::endl;
-		            std::cout << "Moment Score: " << moment_score << std::endl;
-		            std::cout << "Angle Score: " << angle_score << std::endl;
-		            std::cout << "Total Score: " << total_score << std::endl;
-				}
+		if(!suppress_output) {
+		    std::cout << "CVArea Score: "  <<  cvarea_score << std::endl;
+		    std::cout << "AsRatio Score: " << ar_score << std::endl;
+		    std::cout << "Moment Score: " << moment_score << std::endl;
+		    std::cout << "Angle Score: " << angle_score << std::endl;
+		    std::cout << "Total Score: " << total_score << std::endl;
+		}
 
                 finalscores.push_back(std::make_pair(total_score, std::move(*i)));
         }
 
        if(finalscores.size() > 0) {
-			std::sort(finalscores.begin(), finalscores.end(), &scoresort);
+		std::sort(finalscores.begin(), finalscores.end(), &scoresort);
 
-			return finalscores.back();
-		} else {
-			return std::make_pair(0.0, std::vector<cv::Point>());	
-		}
+		return finalscores.back();
+	} else {
+		return std::make_pair(0.0, std::vector<cv::Point>());	
+	}
 }

@@ -4,9 +4,6 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/videoio.hpp"
-#ifdef VISPROC_BALL_TEST
-#include "opencv2/highgui.hpp"
-#endif
 #include <vector>
 #include <algorithm>
 #include <utility>
@@ -16,14 +13,6 @@ int ball_hueThres[2] = {0, 180};
 int ball_satThres[2] = {0, 35};
 int ball_valThres[2] = {80, 173};
 const double area_threshold = 500;
-
-#ifdef VISPROC_BALL_TEST
-inline void drawOut(const char* window, cv::Mat out, bool live_out) {
-	if(live_out) { cv::imshow(window, out); }
-}
-#else
-inline void drawOut(const char* window, cv::Mat out, bool live_out) {}
-#endif
 
 cv::Mat boulder_preprocess_pipeline(cv::Mat input, bool suppress_output, bool live_output) {
         cv::Mat tmp(input.size(), input.type());

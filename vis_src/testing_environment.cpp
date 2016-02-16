@@ -1,5 +1,5 @@
-#include "visproc_interface.h"
 #include "visproc_common.h"
+#include "visproc_interface.h"
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgcodecs.hpp"
@@ -156,14 +156,20 @@ int main(int argc, char** argv) {
 
 				double distance = getDistance(bounds.size(), src.size());
 				std::pair<double, double> angles = getRelativeAngleOffCenter(out, bounds.size(), distance);
+				double angleToTarget = getAngleOffCenterline(bounds.size());
 
 				cv::Scalar col(255,255,255);
 				cv::drawContours(output, drawVec, 0, col);
-				cv::putText(output, std::to_string(fps), cv::Point(50, 50), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 0, 255));
-				cv::putText(output, std::to_string(distance) + " inches", cv::Point(50, 75), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 255, 0));
-				cv::putText(output, std::string("Horizontal: ") + std::to_string(angles.first * (180.0 / pi)) + " degrees", cv::Point(50, 75), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 255, 0));
 
-				cv::putText(output, std::string("Vertical ") + std::to_string(angles.second  * (180.0 / pi)) + " degrees", cv::Point(50, 100), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(255, 0, 0));
+				cv::putText(output, std::to_string(fps), cv::Point(50, 50), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 0, 255));
+
+				cv::putText(output, std::to_string(distance) + " inches", cv::Point(50, 75), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 255, 0));
+
+				cv::putText(output, std::string("AoT Horizontal: ") + std::to_string(angles.first * (180.0 / pi)) + " degrees", cv::Point(50, 75), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 255, 0));
+
+				cv::putText(output, std::string("AoT Vertical ") + std::to_string(angles.second  * (180.0 / pi)) + " degrees", cv::Point(50, 100), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(255, 0, 0));
+
+				cv::putText(output, std::string("AoCenterLine Horiz: ") + std::to_string(angleToTarget) + " degrees", cv::Point(50, 125), cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(255, 0, 0));
 			
 				cv::imshow("output", output);
 			}

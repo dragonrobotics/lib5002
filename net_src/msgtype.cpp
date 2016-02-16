@@ -6,6 +6,11 @@
 /*			class message				     */
 /* ----------------------------------------------------------------- */
 
+/*! \fn is_valid_message(void* in)
+ *  \brief Checks for presence of header and a valid message type in raw binary data.
+ *
+ *  \param in Raw binary packet data.
+ */
 bool message::is_valid_message(void* in) {
 	message* msg = static_cast<message*>(in);
 	return (
@@ -17,6 +22,13 @@ bool message::is_valid_message(void* in) {
 	);
 }
 
+/*! \fn wrap_packet(message_payload* data, int connType)
+ *  \brief Creates a netmsg object from a given message payload.
+ *
+ *  Creates a new data buffer to hold the packet header and payload. 
+ *  \param data Payload to wrap.
+ *  \param connType Packet type for netmsg (SOCK_STREAM for TCP-bound packets or SOCK_DGRAM for UDP-bound packets)
+ */
 netmsg message::wrap_packet(message_payload* data, int connType) {
 	nbstream stream;
 	data->tobuffer(stream);
@@ -43,6 +55,10 @@ netmsg message::wrap_packet(message_payload* data, int connType) {
 	return netmsg(static_cast<unsigned char*>(buffer), 7+stream.getbufsz(), connType);
 }
 
+/*! \fn unwrap_packet() 
+ *  \brief Extracts a full message_payload derived object from this packet.
+ *  \returns A fully-constructed message_payload object. Can be cast to appropriate payload object type (discover_msg, etc.)
+ */
 std::unique_ptr<message_payload> message::unwrap_packet() {
 	std::unique_ptr<message_payload> out;
 	nbstream stream(this->get_data_start(), (uint32_t)ntohs(this->size));
@@ -77,8 +93,16 @@ std::unique_ptr<message_payload> message::unwrap_packet() {
 /*			class goal_distance_msg				*/
 /* ----------------------------------------------------------------- */
 
-goal_distance_msg::goal_distance_msg(bool stat, double dist, double sc) :
-	distance(dist), score(sc) {
+/*! \fn goal_distance_msg(bool stat, double dist, double sc, double aot)
+ *  \brief Constructs a new goal_distance_msg encapsulating the given goal data.
+ *
+ *  \param stat Status. True = Goal found, False = Goal not found.
+ *  \param dist Distance from goal.
+ *  \param sc Score of found goal.
+ *  \param aot Angle off centerline from found goal.
+ */
+goal_distance_msg::goal_distance_msg(bool stat, double dist, double sc, double aot) :
+	distance(dist), score(sc), angleOffTarget(aot) {
 	if(stat) {
 		status = goal_status::GOAL_FOUND;
 	} else {
@@ -90,10 +114,12 @@ void goal_distance_msg::tobuffer(nbstream& stream) {
 	stream.put8(static_cast<uint8_t>(status));	
 	stream.putDouble(distance);
 	stream.putDouble(score);
+	stream.putDouble(angleOffTarget);
 }
 
 void goal_distance_msg::frombuffer(nbstream& stream) {
 	status = static_cast<goal_status>(stream.get8());
 	distance = stream.getDouble();
 	score = stream.getDouble();
+	angleOffTarget = stream.getDouble();
 }

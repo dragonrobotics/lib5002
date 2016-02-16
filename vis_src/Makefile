@@ -29,6 +29,8 @@ $(VIS_OBJ_OUT_PATH)%.o : ./vis_src/%.cpp $(VIS_INC_COM_PATH)
 $(OUTDIR)/lib5002-vis.so: $(VIS_OBJ_COM_PATH) $(VIS_OBJ_OUT_PATH)goal.o $(VIS_OBJ_OUT_PATH)boulder.o
 	$(CXX) --std=c++14 -fPIC -shared -o $(OUTDIR)/lib5002-vis.so $^
 
+
+
 $(VIS_OBJ_OUT_PATH)testing_environment_goal.o : ./vis_src/testing_environment.cpp $(VIS_INC_COM_PATH)
 	$(CXX) --std=c++14 -c -DVISPROC_EXTENDED_TESTING -DVISPROC_GOAL_TEST -o $@ $(VIS_INC_FLAGS) $< 
 
@@ -37,6 +39,8 @@ $(VIS_OBJ_OUT_PATH)testing_environment_ball.o : ./vis_src/testing_environment.cp
 
 $(VIS_OBJ_OUT_PATH)testing_environment_basic.o : ./vis_src/testing_environment.cpp $(VIS_INC_COM_PATH)
 	$(CXX) --std=c++14 -c -DVISPROC_BASIC_TESTING -o $@ $(VIS_INC_FLAGS) $<
+
+
 
 $(OUTDIR)/goalproc: $(VIS_OBJ_OUT_PATH)testing_environment_goal.o $(OUTDIR)/lib5002-vis.so
 	$(CXX) -o $(OUTDIR)/goalproc $^ $(VIS_LIB_FLAGS)
