@@ -10,6 +10,10 @@
 #include "netaddr.h"
 #include "netmsg.h"
 
+/*!
+ * \class connSocket
+ * \brief Handles connections to TCP clients and servers.
+ */
 class connSocket {
 	netaddr addr;
 	int fd;
@@ -37,12 +41,18 @@ public:
 	
 	netmsg recv(size_t bufsz, int flags=0);
 	netmsg recv(int flags=0);
+
+	netmsg recv_n(size_t nRecv, int flags=0);
 	
 	/* ----------------------------------------------------------------- */
 	
 	int send(netmsg packet_out, int flags=0);
 };
 
+/*!
+ * \class ServerSocket
+ * \brief Handles UDP client and server-side communcations, as well as waiting for TCP communications.
+ */
 class serverSocket {
 	//std::unique_ptr<struct addrinfo, freeaddrinfo_proto> laddr;
 	netaddr laddr;	
