@@ -1,3 +1,5 @@
+typedef static_tp std::chrono::time_point<std::chrono::steady_clock>;
+
 namespace visOdo_parameters {
 	/*
 	* HANDY CONSTANTS
@@ -18,6 +20,12 @@ namespace visOdo_parameters {
 	/*
 	* ALGORITHM PARAMETERS
 	*/
+	const unsigned int nFeaturesTracked = 100;
+	const double minFeatureQuality = 0.005;
+	const unsigned int minDistFeatures = 20; // pixels
+	
+	const unsigned int nFramesBetweenCycles = 10;
+	
 	const double vecUnsmoothThres = (PI / 6.0); // reject flow vectors that have flow directions that differ by this many radians (30 deg * PI / 180 = PI / 6 rad)
 
 	const double vecInconsistentTrans = 0.1; // reject flow vectors that differ from accelerometer readings by this many meters
@@ -89,16 +97,19 @@ struct visOdo_state {
 	double posY;
 	double hdg;
 	
-	unsigned long lastTS;
+	static_tp lastTS;
 	
-	void startCycle(); // find good features to track, set ttl, fill trackpoints and lastPoints and lastFrame
+	void startCycle(cv::Mat frame); // find good features to track, set ttl, fill trackpoints and lastPoints and lastFrame
 	
 	void findOpticalFlow(cv::Mat frame);
 	void filterUnsmoothVectors();
-	void processSkyVectors(double compassHdg);
-	void processGroundVectors(double cameraRot, double tX, double tY);
+	void processSkyVectors(double compassRot);
+	void processGroundVectors(double tX, double tY);
 	void findConsensusRotation();
 	void findConsensusTranslation();
+	void accumulateMovement();
+	
+	void doCycle(cv::Mat frame, double compassRot, double tX, double tY);
 	
 	std::vector<visOdo_feature> getAllSkyFeatures();
 	std::vector<visOdo_feature> getAllGroundFeatures();

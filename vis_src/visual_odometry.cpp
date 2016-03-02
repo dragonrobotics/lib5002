@@ -80,7 +80,7 @@ void visOdo_state::processSkyVectors(double compassRot) {
 	this->trackpoints = std::move(newTrackpoints);
 }
 
-void visOdo_state::processGroundVectors(double cameraRot, double tX, double tY) {
+void visOdo_state::processGroundVectors(double tX, double tY) {
 	std::list<visOdo_feature> cTrackpoints;		// consistent
 	std::list<visOdo_feature> icTrackpoints;	// inconsistent
 	std::vector<visOdo_feature> newTrackpoints;
@@ -95,8 +95,8 @@ void visOdo_state::processGroundVectors(double cameraRot, double tX, double tY) 
 			i[0].groundY = groundPlanePos.second;
 			
 			// unrotate vectors:
-			i[0].groundX = (i[0].groundX * cos(-cameraRot)) - (i[0].groundY * sin(-cameraRot));
-			i[0].groundY = (i[0].groundX * sin(-cameraRot)) + (i[0].groundY * cos(-cameraRot));
+			i[0].groundX = (i[0].groundX * cos(-this->last_rot)) - (i[0].groundY * sin(-this->last_rot));
+			i[0].groundY = (i[0].groundX * sin(-this->last_rot)) + (i[0].groundY * cos(-this->last_rot));
 			
 			// update apparent translation:
 			i.trnsX = (i.trnsX + (i[0].groundX - i[1].groundX)) / 2;
@@ -344,4 +344,49 @@ void visOdo_state::findConsensusTranslation() {
 	
 	this->last_transX = sumX / groundVectors.size();
 	this->last_transY = sumY / groundVectors.size();
+}
+
+void visOdo_state::accumulateMovement() {
+	auto now = std::chrono::steady_clock::now();
+	
+	std::chrono::duration<double> diff = (now - this->lastTS); // in seconds
+	
+	this->posX += (this->last_transX * diff);
+	this->posY += (this->last_transY * diff);
+	this->hdg += (this->last_rot * diff);
+	
+	this->lastTS = now;
+}
+
+void visOdo_state::startCycle(cv::Mat frame) {
+	std::vector<cv::Point> newFeatures;
+	cv::goodFeaturesToTrack(frame, newFeatures, nFeaturesTracked, minFeatureQuality, minDistFeatures);
+	
+	this->ttl = nFramesBetweenCycles;
+	
+	std::vector<visOdo_feature> newTrackpoints;
+	for(cv::Point i : newFeatures) {
+		newTrackpoints.emplace(newTrackpoints.end(), i);
+	}
+	
+	this->trackpoints = std::move(newTrackpoints);
+	this->lastPoints = std::move(newFeatures);
+	this->lastFrame = frame;
+	this->lastTS = std::chrono::steady_clock::now();
+}
+
+void visOdo_state::doCycle(cv::Mat frame, double compassRot, double tX, double tY) {
+		if(this->ttl == 0) {
+			this->startCycle(frame);
+		} else {
+			this->findOpticalFlow(frame);
+			this->filterUnsmoothVectors();
+			this->processSkyVectors(compassRot);
+			this->findConsensusRotation();
+			this->processGroundVectors(tX, tY);
+			this->findConsensusTranslation();
+			this->accumulateMovement();
+		}
+		
+		this->ttl--;
 }
