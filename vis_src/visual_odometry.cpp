@@ -24,8 +24,10 @@
 /* Debugging stuff. */
 const std::string processWindowName = "processing";
 const std::string posWindowName = "position";
-const cv::Vec3	vectorColor = cv::Vec3(0, 255, 0);
-const unsigned int colorIncrement = 255 / nFramesBetweenCycles;
+const cv::Scalar	vectorColor = cv::Scalar(0, 255, 0);
+const cv::Scalar	posColor = cv::Scalar(255, 0, 0)
+const unsigned int	vectorDrawSz = 3;
+const unsigned int	colorIncrement = 255 / nFramesBetweenCycles;
 
 inline std::pair<double, double> projectToGroundPlane(cv::Point imgPoint) {
 	double angleToGround = atan((2*imgPoint.y - cameraSize.height) * tan(cameraVFOV/2));
@@ -455,6 +457,9 @@ int testVisOdo() {
 	cv::namedWindow(posWindowName);
 
 	visOdo_state odoSt;
+
+	cv::Mat currentVectorPos;
+	cv::Mat posOutputWindow(cv::Size(800, 800), CV_8UC3);
 	
 	while(true) {
 		cv::VideoCapture cam(0);
@@ -464,12 +469,33 @@ int testVisOdo() {
 		cv::Mat img;
 		cam >> img;
 
+		if(odoSt.ttl == 0) {
+			currentVectorPos = cv::Mat::zeros(img.size(), CV_8UC3);
+		}
+		
 		odoSt.doCycle(img);
 
-		cv::Mat copy = img.copy();
+		cv::Mat copy = img.clone();
 		
-		for(visOdo_feature& : odoSt.trackpoints) {
+		for(visOdo_feature& i : odoSt.trackpoints) {
+				currentVectorPos.at((cv::Point)i.history[0]) = vectorColor;
+				cv::circle(copy, (cv::Point)i.history[0], vectorDrawSz);
+		}
+		
+		copy.setTo(currentVectorPos, currentVectorPos);
+		
+		if(odoSt.ttl == 0) {
+			unsigned int posXft = (unsigned int)(odoSt.posX * 3.28084);
+			unsigned int posYft = (unsigned int)(odoSt.posY * 3.28084);
 			
+			posOutputWindow.at(cv::Point(posXft+400, posYft+400)) = posColor;
+		}
+		
+		cv::imshow(processWindowName, copy);
+		cv::imshow(posWindowName, posOutputWindow);
+		
+		if(cv::waitKey() > 0) {
+			break;
 		}
 	}
 }
