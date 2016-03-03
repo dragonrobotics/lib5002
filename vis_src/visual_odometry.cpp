@@ -20,6 +20,13 @@
  * 10. Calculate consensus incremental translation
  */
 
+
+/* Debugging stuff. */
+const std::string processWindowName = "processing";
+const std::string posWindowName = "position";
+const cv::Vec3	vectorColor = cv::Vec3(0, 255, 0);
+const unsigned int colorIncrement = 255 / nFramesBetweenCycles;
+
 inline std::pair<double, double> projectToGroundPlane(cv::Point imgPoint) {
 	double angleToGround = atan((2*imgPoint.y - cameraSize.height) * tan(cameraVFOV/2));
 	//double angleX = atan((2*imgPoint.x - cameraSize.width) * tan(cameraHFOV/2));
@@ -35,6 +42,19 @@ inline std::pair<double, double> projectToGroundPlane(cv::Point imgPoint) {
 // assumes all sky points are at infinity
 inline double projectToSkyCylinder(cv::Point imgPoint) {
 	return ((imgPoint.x - (cameraSize.width / 2)) * cameraHFOV) / (2*cameraSize.width); // (cameraHFOV/ 2) * ((imgPoint.x - (cameraSize.width / 2)) / cameraSize.width);
+}
+
+void visOdo_state::processSkyVectors() {
+	for(visOdo_feature& i : this->trackpoints) {
+		if(i[0].frmY > skyBottom) {
+			// project vectors to sky cylinder:
+			i.skyFlag = 1;
+			i[0].skyTheta = projectToSkyCylinder(i[0]);
+			
+			// update apparent rotation:
+			i.rotTheta = (i.rotTheta + (i[0].skyTheta - i[1].skyTheta)) / 2;
+		}
+	}
 }
 
 void visOdo_state::processSkyVectors(double compassRot) {
@@ -130,6 +150,28 @@ void visOdo_state::processGroundVectors(double tX, double tY) {
 	}
 	
 	this->trackpoints = std::move(newTrackpoints);
+}
+
+void visOdo_state::processGroundVectors() {
+	for(visOdo_feature& i : this->trackpoints) {
+		if(i[0].frmY < groundTop) {
+			// project vectors to ground plane:
+			i.skyFlag = 0;
+			std::pair<double, double> groundPlanePos = projectToGroundPlane(i[0]);
+			
+			i[0].groundX = groundPlanePos.first;
+			i[0].groundY = groundPlanePos.second;
+			
+			// unrotate vectors:
+			i[0].groundX = (i[0].groundX * cos(-this->last_rot)) - (i[0].groundY * sin(-this->last_rot));
+			i[0].groundY = (i[0].groundX * sin(-this->last_rot)) + (i[0].groundY * cos(-this->last_rot));
+			
+			// update apparent translation:
+			i.trnsX = (i.trnsX + (i[0].groundX - i[1].groundX)) / 2;
+			i.trnsY = (i.trnsY + (i[0].groundY - i[1].groundY)) / 2;
+			
+		}
+	}
 }
 
 std::vector<visOdo_feature> visOdo_state::getAllSkyFeatures() {
@@ -389,4 +431,45 @@ void visOdo_state::doCycle(cv::Mat frame, double compassRot, double tX, double t
 		}
 		
 		this->ttl--;
+}
+
+void visOdo_state::doCycle(cv::Mat frame) {
+		if(this->ttl == 0) {
+			this->startCycle(frame);
+		} else {
+			this->findOpticalFlow(frame);
+			this->filterUnsmoothVectors();
+			this->processSkyVectors();
+			this->findConsensusRotation();
+			this->processGroundVectors();
+			this->findConsensusTranslation();
+			this->accumulateMovement();
+		}
+		
+		this->ttl--;
+}
+
+
+int testVisOdo() {
+	cv::namedWindow(processWindowName);
+	cv::namedWindow(posWindowName);
+
+	visOdo_state odoSt;
+	
+	while(true) {
+		cv::VideoCapture cam(0);
+		if(!cam.open())
+			return -1;
+
+		cv::Mat img;
+		cam >> img;
+
+		odoSt.doCycle(img);
+
+		cv::Mat copy = img.copy();
+		
+		for(visOdo_feature& : odoSt.trackpoints) {
+			
+		}
+	}
 }

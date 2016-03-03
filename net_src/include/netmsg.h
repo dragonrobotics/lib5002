@@ -18,15 +18,15 @@ class netmsg {
 public:
 	netaddr addr;
 	
-	netmsg(size_t bufsz, int type) : data(new unsigned char[bufsz]), buflen(bufsz), netlen(0), addr(new struct sockaddr_storage), socktype(type) {};
+	netmsg(size_t bufsz) : data(new unsigned char[bufsz]), buflen(bufsz), addr(new struct sockaddr_storage) {};
 
-	netmsg(unsigned char* buf, size_t bufsz) : data(buf), buflen(bufsz), netlen(0), addr(new struct sockaddr_storage), socktype(type) {};
+	netmsg(unsigned char* buf, size_t bufsz) : data(buf), buflen(bufsz), addr(new struct sockaddr_storage) {};
 
-	netmsg(std::shared_ptr<unsigned char> buf, size_t bufsz) : data(buf), buflen(bufsz), netlen(0), addr(new struct sockaddr_storage), socktype(type) {};
+	netmsg(std::shared_ptr<unsigned char> buf, size_t bufsz) : data(buf), buflen(bufsz), addr(new struct sockaddr_storage) {};
 
 	explicit netmsg() { netmsg(default_buflen); }
 	
-	netmsg(const netmsg& rhs) : data(rhs.data), buflen(rhs.buflen), netlen(rhs.netlen), addr(rhs.addr) {};
+	netmsg(const netmsg& rhs) : data(rhs.data), buflen(rhs.buflen), addr(rhs.addr) {};
 
 	/* ----------------------------------------------------------------- */
 	

@@ -66,7 +66,7 @@ struct message {
 	}
 
 	static bool is_valid_message(void* in);
-	static netmsg wrap_packet(message_payload* data, int connType);
+	static netmsg wrap_packet(message_payload* data);
 	std::unique_ptr<message_payload> unwrap_packet();
 } __attribute__((packed));
 

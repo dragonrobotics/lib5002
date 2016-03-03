@@ -35,11 +35,11 @@ connSocket connectToCamServer(netaddr serverAddress,
 }
 
 cv::Mat getImageFromServer(connSocket& cs_socket) {
-	while(true) {	
-		netmsg camdata = cs_socket.recv(864000+8); // 600 * 480 * 3 bytes of JPEG data at max + 8 bytes of header
+	while(true) {
+		netmsg headerData = cs_socket.recv(8); // 600 * 480 * 3 bytes of JPEG data at max + 8 bytes of header
 
-		nbstream is(camdata.getbuf(), camdata.getnetsz());
-		unsigned char header[4] = { is.get8(), is.get8(), is.get8(), is.get8() };
+		nbstream headerStream(headerData.getbuf(), headerData.getbufsz());
+		unsigned char header[4] = { headerStream.get8(), headerStream.get8(), headerStream.get8(), headerStream.get8() };
 
 		bool valid_header = true;
 		for(int i=0;i<4;i++) {
@@ -53,7 +53,11 @@ cv::Mat getImageFromServer(connSocket& cs_socket) {
 			continue;
 		}
 
-		std::vector<unsigned char> jpegdata(is.cur, is.buf.end());
+		int sz = headerStream.get32();
+		netmsg payload = cs_socket.recv(sz);
+		nbstream dataStream(payload.getbuf(), payload.getbufsz());
+
+		std::vector<unsigned char> jpegdata(dataStream.cur, dataStream.buf.end());
 		return cv::imdecode(jpegdata, CV_LOAD_IMAGE_COLOR);
 	}
 }

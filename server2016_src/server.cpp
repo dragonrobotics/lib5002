@@ -32,7 +32,7 @@ void disc_server() {
 			if(msgdata->type == message_type::DISCOVER) {
 				std::cout << "Received DISCOVER message from " << (std::string)msg.addr << std::endl;
 				discover_msg retm(origin_t::JETSON);
-				netmsg out = message::wrap_packet(&retm, SOCK_DGRAM);
+				netmsg out = message::wrap_packet(&retm);
 				out.addr = msg.addr;
 
 				sock.send(out);

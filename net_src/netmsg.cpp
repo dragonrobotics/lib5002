@@ -24,10 +24,6 @@ std::shared_ptr<unsigned char> netmsg::getbuf() {
 	return std::shared_ptr<unsigned char>(data);
 }
 
-const int netmsg::getnetsz() {
-	return netlen;
-}
-
 const int netmsg::getbufsz() {
 	return buflen;
 }

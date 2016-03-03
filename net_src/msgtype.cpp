@@ -27,9 +27,8 @@ bool message::is_valid_message(void* in) {
  *
  *  Creates a new data buffer to hold the packet header and payload. 
  *  \param data Payload to wrap.
- *  \param connType Packet type for netmsg (SOCK_STREAM for TCP-bound packets or SOCK_DGRAM for UDP-bound packets)
  */
-netmsg message::wrap_packet(message_payload* data, int connType) {
+netmsg message::wrap_packet(message_payload* data) {
 	nbstream stream;
 	data->tobuffer(stream);
 
@@ -52,7 +51,7 @@ netmsg message::wrap_packet(message_payload* data, int connType) {
 
 	std::cout << "(network order: 0x" << mout->size << std::dec << ")" << std::endl; 
 
-	return netmsg(static_cast<unsigned char*>(buffer), 7+stream.getbufsz(), connType);
+	return netmsg(static_cast<unsigned char*>(buffer), 7+stream.getbufsz());
 }
 
 /*! \fn unwrap_packet() 
