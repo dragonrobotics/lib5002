@@ -1,3 +1,15 @@
+#include "visproc_common.h"
+#include "visproc_interface.h"
+#include "opencv2/core.hpp"
+#include "opencv2/imgproc.hpp"
+#include "opencv2/imgcodecs.hpp"
+#include "opencv2/videoio.hpp"
+#include "opencv2/highgui.hpp"
+#include <vector>
+#include <algorithm>
+#include <utility>
+#include <iostream>
+
 typedef static_tp std::chrono::time_point<std::chrono::steady_clock>;
 
 /*
@@ -47,9 +59,11 @@ const double cameraHeight = 0; // Height of camera off ground in meters.
 /*
 * ALGORITHM PARAMETERS
 */
-const unsigned int nFeaturesTracked = 100;
+const unsigned int nFeaturesTracked = 200;
 const double minFeatureQuality = 0.005;
 const unsigned int minDistFeatures = 20; // pixels
+
+const unsigned int minNumFeatures = 40;	// refind features if our found feature count drops below this
 
 const unsigned int nFramesBetweenCycles = 10;
 
@@ -63,8 +77,8 @@ const unsigned int vecQualityDecay  = 1;	// every cycle removes this from each f
 
 const unsigned int vecHistoryLen = 7;
 
-unsigned int groundTop = 240;			// beginning of horizon zone
-unsigned int skyBottom = 600;			// end of horizon zone
+unsigned int groundTop = 540;			// beginning of horizon zone
+unsigned int skyBottom = 180;			// end of horizon zone
 
 const unsigned int consensusRandGroupSz = 40;	// number of elements to get consensus for
 
@@ -115,13 +129,13 @@ struct visOdo_state {
 	std::vector<cv::Point> lastPoints;
 	unsigned int ttl = 0;
 	
-	double last_transX;
-	double last_transY;
-	double last_rot;
+	double last_transX = 0;
+	double last_transY = 0;
+	double last_rot = 0;
 	
-	double posX;
-	double posY;
-	double hdg;
+	double posX = 0;
+	double posY = 0;
+	double hdg = 0;
 	
 	static_tp lastTS;
 	
