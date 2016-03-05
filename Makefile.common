@@ -12,7 +12,7 @@ X86-64LD := $(X86_TRIPLET)-ld
 ARMLD := $(ARM_TRIPLET)-ld
 
 ifeq ($(ARCH), X86-64)
-CXX := $(X86-64CXX)
+CXX := $(X86-64CXX) -g
 LD := $(X86-64LD)
 OUTDIR := ./bin/x86-64
 OPENCV-DIR := /usr/local/lib

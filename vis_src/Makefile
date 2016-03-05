@@ -51,10 +51,14 @@ $(OUTDIR)/goalproc-basic: $(VIS_OBJ_OUT_PATH)testing_environment_basic.o $(OUTDI
 $(OUTDIR)/ballproc: $(VIS_OBJ_OUT_PATH)testing_environment_ball.o $(OUTDIR)/lib5002-vis.so
 	$(CXX) -o $(OUTDIR)/ballproc $^ $(VIS_LIB_FLAGS)
 
+$(OUTDIR)/odometry: $(VIS_OBJ_OUT_PATH)visual_odometry.o $(OUTDIR)/lib5002-vis.so
+	$(CXX) -o $(OUTDIR)/odometry $^ $(VIS_LIB_FLAGS)
+
 lib5002-vis.so: $(OUTDIR)/lib5002-vis.so
 goalproc: $(OUTDIR)/goalproc
 goalproc-basic: $(OUTDIR)/goalproc-basic
 ballproc: $(OUTDIR)/ballproc
+odometry: $(OUTDIR)/odometry
 
 MODULES += lib5002-vis.so
 PROGRAMS += goalproc goalproc-basic ballproc

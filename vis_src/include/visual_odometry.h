@@ -1,16 +1,23 @@
+#pragma once 
+
 #include "visproc_common.h"
 #include "visproc_interface.h"
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/videoio.hpp"
+#include "opencv2/video.hpp"
 #include "opencv2/highgui.hpp"
 #include <vector>
 #include <algorithm>
 #include <utility>
 #include <iostream>
+#include <cmath>
+#include <list>
+#include <chrono>
+#include <array>
 
-typedef static_tp std::chrono::time_point<std::chrono::steady_clock>;
+typedef std::chrono::time_point<std::chrono::steady_clock> static_tp;
 
 /*
 * HANDY CONSTANTS
@@ -75,10 +82,10 @@ const unsigned int vecQualityCutoff = 10;	// discard features that have unsmooth
 const unsigned int vecQualityPenalty = 5;	// unsmooth flow vectors have this added to their scores
 const unsigned int vecQualityDecay  = 1;	// every cycle removes this from each feature's score
 
-const unsigned int vecHistoryLen = 7;
+const unsigned char vecHistoryLen = 7;
 
-unsigned int groundTop = 540;			// beginning of horizon zone
-unsigned int skyBottom = 180;			// end of horizon zone
+int groundTop = 340;			// beginning of horizon zone
+int skyBottom = 300;			// end of horizon zone
 
 const unsigned int consensusRandGroupSz = 40;	// number of elements to get consensus for
 
@@ -94,7 +101,9 @@ struct visOdo_vector {
 	double skyTheta;
 	
 	operator cv::Point() { return cv::Point(frmX, frmY); };
-	visOdo_vector(cv::Point frm) : frmX(frm.x), frmY(frm.y) {};
+	operator cv::Point2f() { return cv::Point2f(frmX, frmY); };
+	visOdo_vector(cv::Point2f& frm) : frmX(frm.x), frmY(frm.y) {};
+	visOdo_vector() : frmX(0), frmY(0), groundX(0), groundY(0), skyTheta(0) {};
 } __attribute__((packed)); // size: 28 bytes
 
 struct visOdo_feature {
@@ -114,19 +123,37 @@ struct visOdo_feature {
 	visOdo_vector& operator[](unsigned int n) {
 		return this->history[((vecHistoryLen+1) + (historyHead - n)) % (vecHistoryLen+1)];
 	}
-	
-	void addElement(visOdo_vector& elem) {
-		historyHead = (historyHead+1) % (vecHistoryLen+1);
-		history[historyHead] = elem;
-		nVectors = min(nVectors+1, vecHistoryLen+1);
-	}
-	
+
+	template<typename T> visOdo_feature(T firstPoint);
 }  __attribute__((packed)); // size: (28 * vecHistoryLen+1) + 6 + (8*3) or 202 bytes if vecHistoryLen == 8
+
+template<typename T>
+void addFeatureElement(visOdo_feature& o, T newPoint) {
+	addFeatureElement(o, visOdo_vector(newPoint));	
+}
+
+template<>
+void addFeatureElement(visOdo_feature& o, visOdo_vector& elem) {
+	o.historyHead = (o.historyHead+1) % (vecHistoryLen+1);
+	o.history[o.historyHead] = elem;
+	o.nVectors = std::min(o.nVectors+1, vecHistoryLen+1);
+}
+
+template<>
+void addFeatureElement(visOdo_feature& o, visOdo_vector elem) {
+	o.historyHead = (o.historyHead+1) % (vecHistoryLen+1);
+	o.history[o.historyHead] = elem;
+	o.nVectors = std::min(o.nVectors+1, vecHistoryLen+1);
+}
+
+template<typename T> visOdo_feature::visOdo_feature(T firstPoint)  {
+	addFeatureElement(*this, firstPoint);
+}
 
 struct visOdo_state {
 	cv::Mat lastFrame;
 	std::vector<visOdo_feature> trackpoints;
-	std::vector<cv::Point> lastPoints;
+	std::vector<cv::Point2f> lastPoints;
 	unsigned int ttl = 0;
 	
 	double last_transX = 0;
@@ -159,4 +186,6 @@ struct visOdo_state {
 
 	std::vector<visOdo_feature> getAllSkyFeatures();
 	std::vector<visOdo_feature> getAllGroundFeatures();
+	unsigned int getNumSkyVectors();
+	unsigned int getNumGroundVectors();
 };

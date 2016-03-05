@@ -17,7 +17,6 @@
  * 7. Project ground flow vectors onto robot ground plane
  * 8. Unrotate ground flow vectors
  * 9. Filter vectors by consensus with accelerometer data
- * 10. Calculate consensus incremental translation
  */
 #include "visual_odometry.h"
 
@@ -28,20 +27,20 @@ const std::string skyTrackbarName = "Sky Bottom";
 const std::string groundTrackbarName = "Ground Top";
 
 const cv::Scalar	vectorColor = cv::Scalar(0, 0, 255);
-const cv::Scalar	posColor = cv::Scalar(, 0, 255);
+const cv::Scalar	posColor = cv::Scalar(0, 0, 255);
 
 const cv::Scalar	groundColor = cv::Scalar(0, 255, 0);
 const cv::Scalar	skyColor = cv::Scalar(255, 0, 0);
 
 const cv::Scalar	textColor = cv::Scalar(255, 255, 0);
-const unsigned int	vectorDrawSz = 3;
+const unsigned int	vectorDrawSz = 10;
 const unsigned int	colorIncrement = 255 / nFramesBetweenCycles;
 
-inline std::pair<double, double> projectToGroundPlane(cv::Point imgPoint) {
+inline std::pair<double, double> projectToGroundPlane(cv::Point2f imgPoint) {
 	double angleToGround = atan((2*imgPoint.y - cameraSize.height) * tan(cameraVFOV/2));
 	//double angleX = atan((2*imgPoint.x - cameraSize.width) * tan(cameraHFOV/2));
 	
-	double y = height / tan(angleToGround+cameraTiltAngle);
+	double y = cameraHeight / tan(angleToGround+cameraTiltAngle);
 	
 	double fovLenAtY = tan(cameraHFOV) / (2 * y);
 	double x = fovLenAtY * ((imgPoint.x - (cameraSize.width / 2)) / cameraSize.width);
@@ -50,7 +49,7 @@ inline std::pair<double, double> projectToGroundPlane(cv::Point imgPoint) {
 }
 
 // assumes all sky points are at infinity
-inline double projectToSkyCylinder(cv::Point imgPoint) {
+inline double projectToSkyCylinder(cv::Point2f imgPoint) {
 	return ((imgPoint.x - (cameraSize.width / 2)) * cameraHFOV) / (2*cameraSize.width); // (cameraHFOV/ 2) * ((imgPoint.x - (cameraSize.width / 2)) / cameraSize.width);
 }
 
@@ -65,6 +64,26 @@ void visOdo_state::processSkyVectors() {
 			i.rotTheta = (i.rotTheta + (i[0].skyTheta - i[1].skyTheta)) / 2;
 		}
 	}
+}
+
+unsigned int visOdo_state::getNumSkyVectors() {
+	unsigned int n = 0;
+	for(visOdo_feature& i : this->trackpoints) {
+		if(i[0].frmY < skyBottom) {
+			n++;
+		}
+	}
+	return n;
+}
+
+unsigned int visOdo_state::getNumGroundVectors() {
+	unsigned int n = 0;
+	for(visOdo_feature& i : this->trackpoints) {
+		if(i[0].frmY > groundTop) {
+			n++;
+		}
+	}
+	return n;
 }
 
 void visOdo_state::processSkyVectors(double compassRot) {
@@ -102,7 +121,7 @@ void visOdo_state::processSkyVectors(double compassRot) {
 			}
 		}
 	} else {
-		for(visOdo_feature& i : unsmoothTrackpoints) {
+		for(visOdo_feature& i : icTrackpoints) {
 			newTrackpoints.push_back(std::move(i));
 		}
 	}
@@ -154,7 +173,7 @@ void visOdo_state::processGroundVectors(double tX, double tY) {
 			}
 		}
 	} else {
-		for(visOdo_feature& i : unsmoothTrackpoints) {
+		for(visOdo_feature& i : icTrackpoints) {
 			newTrackpoints.push_back(std::move(i));
 		}
 	}
@@ -187,7 +206,7 @@ void visOdo_state::processGroundVectors() {
 std::vector<visOdo_feature> visOdo_state::getAllSkyFeatures() {
 	std::vector<visOdo_feature> rVec;
 	for(visOdo_feature& i : this->trackpoints) {
-		if(i[0].frmY > skyBottom) {
+		if(i[0].frmY < skyBottom) {
 			rVec.push_back(i);
 		}
 	}
@@ -198,7 +217,7 @@ std::vector<visOdo_feature> visOdo_state::getAllSkyFeatures() {
 std::vector<visOdo_feature> visOdo_state::getAllGroundFeatures() {
 	std::vector<visOdo_feature> rVec;
 	for(visOdo_feature& i : this->trackpoints) {
-		if(i[0].frmY < groundTop) {
+		if(i[0].frmY > groundTop) {
 			rVec.push_back(i);
 		}
 	}
@@ -256,7 +275,7 @@ void visOdo_state::filterUnsmoothVectors() {
 			}
 		}
 		
-		i.score = max(i.score - vecQualityDecay, 0);
+		i.score = std::max(i.score - vecQualityDecay, (unsigned int)0);
 		
 		if(!smooth) {
 			smoothTrackpoints.push_back(std::move(i));
@@ -284,29 +303,38 @@ void visOdo_state::filterUnsmoothVectors() {
 		}
 	}
 	
-	this->trackpoints = std::move(newTrackpoints);
+	this->trackpoints = newTrackpoints;
 }
 
 void visOdo_state::findOpticalFlow(cv::Mat nextFrame) {
-	std::vector<cv::Point> newPoints;
-	std::vector<unsigned char> status;
-	std::vector<unsigned char> err;
+	std::vector<cv::Point2f> newPoints(this->lastPoints.size());
+	std::vector<unsigned char> status(this->lastPoints.size());
+	std::vector<float> err(this->lastPoints.size());
 	
 	// find new points
+	std::cout << "Number points: " << this->lastPoints.size() << std::endl;
+
 	cv::calcOpticalFlowPyrLK(this->lastFrame,
 		nextFrame,
 		this->lastPoints,
 		newPoints,
-		err);
+		status,
+		err,
+		cv::Size(31, 31),
+		0,
+		cv::TermCriteria(cv::TermCriteria::COUNT+cv::TermCriteria::EPS, 30, 0.01),
+		0,
+		1e-4
+		);
 	
 	// match old points to new points
 	unsigned int idx = 0;
 	std::vector<visOdo_feature> newTrackpoints;
-	for(cv::Point& i : this->lastPoints) {
+	for(cv::Point2f& i : this->lastPoints) {
 		for(visOdo_feature& i2 : this->trackpoints) {
-			if(i2[0] == i) {
+			if(cv::Point2f(i2[0]) == i) {
 				if(status[idx] == 1) {
-					i2.addElement(newPoints[idx]);
+					addFeatureElement(i2, newPoints[idx]);
 					newTrackpoints.push_back(std::move(i2));
 				}
 			}
@@ -314,8 +342,8 @@ void visOdo_state::findOpticalFlow(cv::Mat nextFrame) {
 		idx++;
 	}
 	
-	this->trackpoints = std::move(newTrackpoints);
-	this->lastPoints = std::move(newPoints);
+	this->trackpoints = newTrackpoints;
+	this->lastPoints = newPoints;
 	this->lastFrame = nextFrame;
 	this->ttl--;
 }
@@ -334,6 +362,8 @@ void visOdo_state::findConsensusRotation() {
 	
 	std::sort(skyVectors.begin(), skyVectors.end(), compareFeatureRotation);
 	
+	std::cout << "found " << skyVectors.size() << " sky vectors." << std::endl;
+
 	double histogramRange = skyVectors.front().rotTheta - skyVectors.back().rotTheta;
 	double histogramBinSz = histogramRange / rotHistogramBinNum;
 	double startRotTheta = skyVectors.front().rotTheta;
@@ -415,36 +445,42 @@ void visOdo_state::accumulateMovement() {
 	
 	std::chrono::duration<double> diff = (now - this->lastTS); // in seconds
 	
-	this->hdg += (this->last_rot * diff);
-	this->posX += ((this->last_transX * cos(this->hdg)) * diff);
-	this->posY += (this->last_transY * sin(this->hdg) * diff);
+	this->hdg += (this->last_rot * diff.count());
+	this->posX += ((this->last_transX * cos(this->hdg)) * diff.count());
+	this->posY += (this->last_transY * sin(this->hdg) * diff.count());
 	
 	
 	this->lastTS = now;
 }
 
 void visOdo_state::startCycle(cv::Mat frame) {
-	std::vector<cv::Point> newFeatures;
+	std::vector<cv::Point2f> newFeatures;
 	cv::goodFeaturesToTrack(frame, newFeatures, nFeaturesTracked, minFeatureQuality, minDistFeatures);
 	
 	this->ttl = nFramesBetweenCycles;
 	
 	std::vector<visOdo_feature> newTrackpoints;
-	for(cv::Point i : newFeatures) {
+	for(cv::Point2f i : newFeatures) {
 		newTrackpoints.emplace(newTrackpoints.end(), i);
 	}
 	
 	this->trackpoints = std::move(newTrackpoints);
-	this->lastPoints = std::move(newFeatures);
+	this->lastPoints = newFeatures;
 	this->lastFrame = frame;
 	this->lastTS = std::chrono::steady_clock::now();
 }
 
 void visOdo_state::doCycle(cv::Mat frame, double compassRot, double tX, double tY) {
-		if((this->ttl == 0) || (this->trackpoints.size < minNumFeatures)) {
+		if((this->ttl == 0) || (this->trackpoints.size() < minNumFeatures)) {
 			this->startCycle(frame);
 		} else {
 			this->findOpticalFlow(frame);
+			if(this->trackpoints.size() < minNumFeatures) {
+				std::cout << "could not track vectors" << std::endl;
+				return;
+			} else {
+				std::cout << "tracking " << this->trackpoints.size() << " features" << std::endl;
+			}
 			this->filterUnsmoothVectors();
 			this->processSkyVectors(compassRot);
 			this->findConsensusRotation();
@@ -457,11 +493,35 @@ void visOdo_state::doCycle(cv::Mat frame, double compassRot, double tX, double t
 }
 
 void visOdo_state::doCycle(cv::Mat frame) {
-		if(this->ttl == 0 || (this->trackpoints.size < minNumFeatures)) {
+		if(this->ttl == 0 || (this->trackpoints.size() < minNumFeatures)) {
 			this->startCycle(frame);
 		} else {
 			this->findOpticalFlow(frame);
+			if(this->trackpoints.size() < minNumFeatures) {
+				std::cout << "could not track vectors" << std::endl;
+				return;
+			} else {
+				std::cout << "tracking " << this->trackpoints.size() << " features" << std::endl;
+			}
 			this->filterUnsmoothVectors();
+
+			unsigned int nGround = 0;
+			unsigned int nSky = 0;
+
+			if((nSky = this->getNumSkyVectors()) == 0) {
+				std::cout << "could not find any sky vectors" << std::endl;
+				return;
+			} else {
+				std::cout << "tracking " << nSky << " sky features" << std::endl;
+			}
+
+			if((nGround = this->getNumGroundVectors()) == 0) {
+				std::cout << "could not find any ground vectors" << std::endl;
+				return;
+			} else {
+				std::cout << "tracking " << nGround << " ground features" << std::endl;
+			}
+
 			this->processSkyVectors();
 			this->findConsensusRotation();
 			this->processGroundVectors();
@@ -472,14 +532,14 @@ void visOdo_state::doCycle(cv::Mat frame) {
 		this->ttl--;
 }
 
-void onTrackbarUpdate(unsigned int pos, void* ptr) {
+void onTrackbarUpdate(int pos, void* ptr) {
 	if(groundTop < skyBottom) {
 		groundTop = skyBottom+1;
 	}
 }
 
 
-int testVisOdo() {
+int main() {
 	cv::namedWindow(processWindowName);
 	cv::namedWindow(posWindowName);
 
@@ -495,55 +555,67 @@ int testVisOdo() {
 	cv::createTrackbar(groundTrackbarName, processWindowName, &groundTop, cameraSize.height, onTrackbarUpdate);
 	cv::createTrackbar(skyTrackbarName, processWindowName, &skyBottom, cameraSize.height, onTrackbarUpdate);
 	
-	while(true) {
-		
-		if(!cam.open())
-			return -1;
+	if(!cam.isOpened())
+		return -1;
 
+	std::chrono::steady_clock::time_point lst = std::chrono::steady_clock::now();
+	double fpsSum = 0;
+	unsigned int nFrames = 0;
+
+	while(true) {
 		cv::Mat img;
 		cam >> img;
 
 		if(odoSt.ttl == 0) {
-			currentVectorPos = cv::Mat::zeros(img.size(), CV_8UC3);
+			currentVectorPos = cv::Mat::zeros(img.size(), img.type());
 		}
 		
 		double t = (double)cv::getTickCount();
+
+		cv::Mat inImg(img.size(), CV_8U);
+		cv::cvtColor(img, inImg, CV_BGR2GRAY, 1);
 		
-		odoSt.doCycle(img);
+		odoSt.doCycle(inImg);
 
 		double fps = 1 / (((double)cv::getTickCount() - t) / cv::getTickFrequency());
 		
+		fpsSum += fps;
+		nFrames++;
+
 		cv::Mat copy = img.clone();
 		
 		for(visOdo_feature& i : odoSt.trackpoints) {
-				currentVectorPos.at((cv::Point)i.history[0]) = vectorColor;
-				cv::circle(copy, (cv::Point)i.history[0], vectorDrawSz);
+				currentVectorPos.at<cv::Scalar>((cv::Point2f)i.history[0]) = vectorColor;
+				cv::circle(copy, (cv::Point)i.history[0], vectorDrawSz, vectorColor);
 		}
 		
-		copy.setTo(currentVectorPos, currentVectorPos);
+		currentVectorPos.copyTo(copy, currentVectorPos);
 		
+		std::cout << "ttl: " << odoSt.ttl << std::endl;
+		//std::cout << "Number points: " << odoSt.lastPoints.size() << std::endl;
+
 		if(odoSt.ttl == 0) {
 			unsigned int posXft = (unsigned int)(odoSt.posX * 3.28084);
 			unsigned int posYft = (unsigned int)(odoSt.posY * 3.28084);
 			
-			posOutputWindow.at(cv::Point(posXft+400, posYft+400)) = posColor;
+			posOutputWindow.at<cv::Scalar>(cv::Point(posXft+400, posYft+400)) = posColor;
 		}
 		
 		cv::line(copy, cv::Point(0, groundTop), cv::Point(cameraSize.width-1, groundTop), groundColor);
 		cv::line(copy, cv::Point(0, skyBottom), cv::Point(cameraSize.width-1, skyBottom), skyColor);
+
+		cv::putText(copy, "current fps: " + std::to_string(fpsSum / nFrames), cv::Point(50, 25), cv::FONT_HERSHEY_SIMPLEX, 1.0, textColor);
+		cv::putText(copy, "current heading: " + std::to_string(odoSt.hdg), cv::Point(50, 50),cv::FONT_HERSHEY_SIMPLEX, 1.0, textColor);
+		cv::putText(copy, "number features: " + std::to_string(odoSt.trackpoints.size()), cv::Point(50, 75), cv::FONT_HERSHEY_SIMPLEX, 1.0, textColor);
 		
-		cv::putText(copy, "current fps: " + std::to_string(fps), cv::Point(50, 25),FONT_HERSHEY_SIMPLEX, 1.0, textColor);
-		cv::putText(copy, "current heading: " + std::to_string(odoSt.hdg), cv::Point(50, 50),FONT_HERSHEY_SIMPLEX, 1.0, textColor);
-		cv::putText(copy, "number features: " + std::to_string(odoSt.trackpoints.size()), cv::Point(50, 75),FONT_HERSHEY_SIMPLEX, 1.0, textColor);
-		
-		cv::putText(copy, "velX:  " + std::to_string(odoSt.last_transX), cv::Point(50, 125),FONT_HERSHEY_SIMPLEX, 1.0, textColor);
-		cv::putText(copy, "velY:  " + std::to_string(odoSt.last_transY), cv::Point(50, 150),FONT_HERSHEY_SIMPLEX, 1.0, textColor);
-		cv::putText(copy, "velRot: " + std::to_string(odoSt.last_rot), cv::Point(50, 175),FONT_HERSHEY_SIMPLEX, 1.0, textColor);
+		cv::putText(copy, "velX:  " + std::to_string(odoSt.last_transX), cv::Point(50, 125), cv::FONT_HERSHEY_SIMPLEX, 1.0, textColor);
+		cv::putText(copy, "velY:  " + std::to_string(odoSt.last_transY), cv::Point(50, 150), cv::FONT_HERSHEY_SIMPLEX, 1.0, textColor);
+		cv::putText(copy, "velRot: " + std::to_string(odoSt.last_rot), cv::Point(50, 175), cv::FONT_HERSHEY_SIMPLEX, 1.0, textColor);
 		
 		cv::imshow(processWindowName, copy);
 		cv::imshow(posWindowName, posOutputWindow);
 		
-		if(cv::waitKey() > 0) {
+		if(cv::waitKey(5) > 0) {
 			break;
 		}
 	}
