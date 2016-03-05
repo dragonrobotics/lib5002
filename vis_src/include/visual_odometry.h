@@ -96,14 +96,25 @@ struct visOdo_vector {
 	unsigned short frmX;
 	unsigned short frmY;
 	
+	unsigned short id;
+
 	double groundX;
 	double groundY;
 	double skyTheta;
 	
 	operator cv::Point() { return cv::Point(frmX, frmY); };
 	operator cv::Point2f() { return cv::Point2f(frmX, frmY); };
-	visOdo_vector(cv::Point2f& frm) : frmX(frm.x), frmY(frm.y) {};
-	visOdo_vector() : frmX(0), frmY(0), groundX(0), groundY(0), skyTheta(0) {};
+
+	visOdo_vector(cv::Point& frm, unsigned short n) : frmX(frm.x), frmY(frm.y), id(n) {};
+	visOdo_vector(cv::Point2f& frm, unsigned short n) : frmX(frm.x), frmY(frm.y), id(n) {};
+	visOdo_vector() : frmX(0), frmY(0), id(0), groundX(0), groundY(0), skyTheta(0) {};
+
+	visOdo_vector& operator=(cv::Point2f& frm) { frmX = frm.x; frmY = frm.y; return *this; };
+	visOdo_vector& operator=(cv::Point& frm) { frmX = frm.x; frmY = frm.y; return *this; };
+
+	bool operator==(cv::Point& frm) { return (frm.x == frmX) && (frm.y == frmY); };
+	bool operator==(cv::Point2f& frm) { return (std::floor(frm.x) == frmX) && (std::floor(frm.y) == frmY); };
+	bool operator==(visOdo_vector& rhs) { return (rhs.id == this->id); };
 } __attribute__((packed)); // size: 28 bytes
 
 struct visOdo_feature {
@@ -111,50 +122,49 @@ struct visOdo_feature {
 	unsigned char historyHead = 0;
 	unsigned char nVectors = 0;
 	
-	double rotTheta;
-	double trnsX;
-	double trnsY;
+	double rotTheta = 0;
+	double trnsX = 0;
+	double trnsY = 0;
 	
-	unsigned char delFlag;	// 1 == delete, 0 == don't delete
-	unsigned char skyFlag;	// 1 == sky vector, 0 == ground vector
-	unsigned short score;
+	unsigned char delFlag = 0;	// 1 == delete, 0 == don't delete
+	unsigned char skyFlag = 0;	// 1 == sky vector, 0 == ground vector
+	unsigned short score = 0;
 	
 	// get vector from n elements ago, n must be < nVectors
 	visOdo_vector& operator[](unsigned int n) {
-		return this->history[((vecHistoryLen+1) + (historyHead - n)) % (vecHistoryLen+1)];
+		return this->history[(((vecHistoryLen+1) + historyHead) - n) % (vecHistoryLen+1)];
 	}
 
-	template<typename T> visOdo_feature(T firstPoint);
+	template<typename T> visOdo_feature(T firstPoint, unsigned short id);
 }  __attribute__((packed)); // size: (28 * vecHistoryLen+1) + 6 + (8*3) or 202 bytes if vecHistoryLen == 8
 
-template<typename T>
-void addFeatureElement(visOdo_feature& o, T newPoint) {
-	addFeatureElement(o, visOdo_vector(newPoint));	
-}
-
-template<>
 void addFeatureElement(visOdo_feature& o, visOdo_vector& elem) {
 	o.historyHead = (o.historyHead+1) % (vecHistoryLen+1);
 	o.history[o.historyHead] = elem;
-	o.nVectors = std::min(o.nVectors+1, vecHistoryLen+1);
+	o.nVectors = (o.nVectors+1 > vecHistoryLen+1 ? vecHistoryLen+1 : o.nVectors+1);
 }
 
-template<>
 void addFeatureElement(visOdo_feature& o, visOdo_vector elem) {
 	o.historyHead = (o.historyHead+1) % (vecHistoryLen+1);
 	o.history[o.historyHead] = elem;
-	o.nVectors = std::min(o.nVectors+1, vecHistoryLen+1);
+	o.nVectors = (o.nVectors+1 > vecHistoryLen+1 ? vecHistoryLen+1 : o.nVectors+1);
 }
 
-template<typename T> visOdo_feature::visOdo_feature(T firstPoint)  {
-	addFeatureElement(*this, firstPoint);
+template<typename T>
+void addFeatureElement(visOdo_feature& o, T newPoint, unsigned short id) {
+	addFeatureElement(o, visOdo_vector(newPoint, id));	
+}
+
+
+template<typename T> visOdo_feature::visOdo_feature(T firstPoint, unsigned short id)  {
+	addFeatureElement(*this, firstPoint, id);
 }
 
 struct visOdo_state {
 	cv::Mat lastFrame;
 	std::vector<visOdo_feature> trackpoints;
 	std::vector<cv::Point2f> lastPoints;
-	unsigned int ttl = 0;
+	int ttl = 0;
 	
 	double last_transX = 0;
 	double last_transY = 0;
