@@ -27,7 +27,9 @@ const std::string skyTrackbarName = "Sky Bottom";
 const std::string groundTrackbarName = "Ground Top";
 
 const cv::Scalar	vectorColor = cv::Scalar(0, 0, 255);
-const cv::Scalar	posColor = cv::Scalar(0, 0, 255);
+const cv::Scalar	posColor = cv::Scalar(0, 255, 0);
+const cv::Scalar	hdgColor = cv::Scalar(255, 0, 0);
+const unsigned int 	hdgVectorLen	= 50;
 
 const cv::Scalar	groundColor = cv::Scalar(0, 255, 0);
 const cv::Scalar	skyColor = cv::Scalar(255, 0, 0);
@@ -36,7 +38,7 @@ const cv::Scalar	textColor = cv::Scalar(255, 255, 0);
 const unsigned int	vectorDrawSz = 5;
 const unsigned int	colorIncrement = 255 / nFramesBetweenCycles;
 
-inline std::pair<double, double> projectToGroundPlane(cv::Point2f imgPoint) {
+std::pair<double, double> projectToGroundPlane(cv::Point2f imgPoint) {
 	double angleToGround = atan((2*double(imgPoint.y) - double(cameraSize.height)) * tan(cameraVFOV/2));
 	//double angleX = atan((2*imgPoint.x - cameraSize.width) * tan(cameraHFOV/2));
 	
@@ -49,8 +51,8 @@ inline std::pair<double, double> projectToGroundPlane(cv::Point2f imgPoint) {
 }
 
 // assumes all sky points are at infinity
-inline double projectToSkyCylinder(cv::Point imgPoint) {
-	return ((double(imgPoint.x) - double(cameraSize.width / 2)) / double(cameraSize.width)) * cameraHFOV; // (cameraHFOV/ 2) * ((imgPoint.x - (cameraSize.width / 2)) / cameraSize.width);
+double projectToSkyCylinder(cv::Point imgPoint) {
+	return (double((cameraSize.width / 2) - imgPoint.x) / double(cameraSize.width)) * cameraHFOV; // (cameraHFOV/ 2) * ((imgPoint.x - (cameraSize.width / 2)) / cameraSize.width);
 }
 
 unsigned int visOdo_state::getNumSkyVectors() {
@@ -81,15 +83,18 @@ void visOdo_state::processSkyVectors() {
 			i[0].skyTheta = projectToSkyCylinder(i[0]);
 			
 			if(i.nVectors > 2) {
-				// update apparent rotation:
-				i.rotTheta = (i.rotTheta + (i[0].skyTheta - i[1].skyTheta)) / 2;
-			} else if(i.nVectors == 2) {
-				i.rotTheta = (i[0].skyTheta - i[1].skyTheta) / 2;
+				double avgRotTheta = 0;
+				for(int idx = 1; idx < i.nVectors; idx++) {
+					avgRotTheta += (i[idx-1].skyTheta - i[idx].skyTheta);
+				}
+
+				avgRotTheta /= i.nVectors-1;
+				i.rotTheta = avgRotTheta;
 			}
 
-			std::cout << "sTheta[1] at x=" << i[1].frmX << " to " << (i[1].skyTheta * (180 / PI)) << std::endl;
-			std::cout << "sTheta[0] at x=" << i[0].frmX << " to " << (i[0].skyTheta * (180 / PI)) << std::endl;
-			std::cout << "nVectors = " << (unsigned short)i.nVectors << " rotTheta = " << i.rotTheta << std::endl;
+			//std::cout << "sTheta[1] at x=" << i[1].frmX << " to " << (i[1].skyTheta * (180 / PI)) << std::endl;
+			//std::cout << "sTheta[0] at x=" << i[0].frmX << " to " << (i[0].skyTheta * (180 / PI)) << std::endl;
+			//std::cout << "nVectors = " << (unsigned short)i.nVectors << " rotTheta = " << i.rotTheta << std::endl;
 		}
 	}
 }
@@ -273,27 +278,35 @@ void visOdo_state::filterUnsmoothVectors() {
 		double dir1c = 0;
 		
 		// calculate vector direction values
-		if(i.nVectors >= 7) {
-			visOdo_vector& p7 = i[7];
-			visOdo_vector& p3 = i[3];
-			dir73 = atan2( p7.frmY - p3.frmY, p7.frmX - p3.frmX );
+		if(i.nVectors > 7) {
+			double sumDispX = 0;
+			double sumDispY = 0;
+			for(unsigned int idx=3;idx<7;idx++) {
+				sumDispX += (i[idx+1].frmX - i[idx].frmX);
+				sumDispY += (i[idx+1].frmY - i[idx].frmY);
+			}
+			dir73 = atan2( sumDispY, sumDispX );
 		}
 		
-		if(i.nVectors >= 3) {
-			visOdo_vector& p3 = i[3];
-			visOdo_vector& p1 = i[1];
-			dir31 = atan2( p3.frmY - p1.frmY, p3.frmX - p1.frmX );
+		if(i.nVectors > 3) {
+			double sumDispX = 0;
+			double sumDispY = 0;
+			for(unsigned int idx=1;idx<3;idx++) {
+				sumDispX += (i[idx+1].frmX - i[idx].frmX);
+				sumDispY += (i[idx+1].frmY - i[idx].frmY);
+			}
+			dir31 = atan2( sumDispY, sumDispX );
 		}
 		
-		if(i.nVectors >= 2) {
+		if(i.nVectors > 2) {
 			visOdo_vector& p1 = i[1];
 			visOdo_vector& pc = i[0];
-			dir31 = atan2( p1.frmY - pc.frmY, p1.frmX - pc.frmX );
+			dir1c = atan2( p1.frmY - pc.frmY, p1.frmX - pc.frmX );
 		}
 		
 		// check for unsmooth vectors
 		bool smooth = true;
-		if(i.nVectors >= 7) {
+		if(i.nVectors > 7) {
 			if(
 			(abs(dir73 - dir31) > vecUnsmoothThres) ||
 			(abs(dir73 - dir1c) > vecUnsmoothThres)
@@ -302,13 +315,13 @@ void visOdo_state::filterUnsmoothVectors() {
 			}
 		}
 		
-		if(i.nVectors >= 3) {
+		if(i.nVectors > 3) {
 			if(abs(dir31 - dir1c) > vecUnsmoothThres) {
 				smooth = false;
 			}
 		}
 		
-		i.score = std::max(i.score - vecQualityDecay, (unsigned int)0);
+		i.score = (i.score == 0 ? 0 : i.score - vecQualityDecay); //std::max(i.score - vecQualityDecay, (unsigned int)0);
 		
 		if(!smooth) {
 			smoothTrackpoints.push_back(i);
@@ -399,53 +412,70 @@ bool compareFeatureTranslation(const visOdo_feature& a, const visOdo_feature& b)
 
 void visOdo_state::findConsensusRotation() {
 	std::vector<visOdo_feature> skyVectors = visOdo_state::getAllSkyFeatures();
+	/*
 	double avgRot = 0;
-	
+	unsigned int nAveraged = 0;	
+
 	for(visOdo_feature& i : skyVectors) {
-		std::cout << "nVectors: " << (unsigned short)i.nVectors << ", rotTheta = " << i.rotTheta << std::endl;
-		avgRot += i.rotTheta;
+		//std::cout << "nVectors: " << (unsigned short)i.nVectors << ", rotTheta = " << i.rotTheta << std::endl;
+				
+		if(!std::isnan(i.rotTheta)) {	
+			avgRot += i.rotTheta;
+			nAveraged++;
+		} else {
+			std::cout << "error: i.rotTheta == nan" << std::endl;
+			for(int idx = 0; idx < i.nVectors; idx++) {
+				std::cout << "sTheta[" << idx << "] at x=" << i[idx].frmX << " to " << (i[idx].skyTheta * (180 / PI)) << std::endl;
+			}
+		}
 	}
 
-	std::cout << "got " << skyVectors.size() << " sky vectors." << std::endl;
+	std::cout << "averaging " << nAveraged << " sky vectors." << std::endl;
 
-	avgRot /= skyVectors.size();
+	avgRot /= nAveraged;
 
-	std::cout << "Mean rotation: " << avgRot * (180 / PI) << std::endl;
+	//std::cout << "Mean rotation: " << avgRot * (180 / PI) << std::endl;
 
 	this->last_rot = avgRot;
+	*/
 
-	/*
+
+	
 	std::array<unsigned int, rotHistogramBinNum> bins;
 	
 	std::sort(skyVectors.begin(), skyVectors.end(), compareFeatureRotation);
 	
 	//std::cout << "found " << skyVectors.size() << " sky vectors." << std::endl;
 
-	double histogramRange = skyVectors.front().rotTheta - skyVectors.back().rotTheta;
-	double histogramBinSz = histogramRange / rotHistogramBinNum;
+	double histogramRange = skyVectors.back().rotTheta - skyVectors.front().rotTheta;
+	double histogramBinSz = histogramRange / double(rotHistogramBinNum);
 	double startRotTheta = skyVectors.front().rotTheta;
 	
+	for(unsigned int i=0;i<rotHistogramBinNum;i++) {
+		bins[i] = 0;
+	}
+
 	for(visOdo_feature& i : skyVectors) {
-		unsigned int binNum = ((startRotTheta - i.rotTheta) / histogramBinSz);
+		unsigned int binNum = ((i.rotTheta - startRotTheta) / histogramBinSz);
 		
 		bins[binNum]++;
 	}
 	
-	double rotWeightedSum = 0;
+	double rotWeightedAvg = 0;
 	
 	unsigned int idx = 0;
 	double currentRotTheta = startRotTheta;
 	for(unsigned int i : bins) {
-		double weight = (i / skyVectors.size());
+		double weight = (double(i) / double(skyVectors.size()));
 		
-		rotWeightedSum = (i * currentRotTheta) / skyVectors.size();
+		rotWeightedAvg += (currentRotTheta * weight);
 		
 		idx++;
 		currentRotTheta += histogramBinSz;
 	}
 	
-	this->last_rot = (rotWeightedSum + PI) - (floor((rotWeightedSum+PI) / PI) * PI);
-	*/
+	this->last_rot = rotWeightedAvg;
+	
 }
 
 void visOdo_state::findConsensusTranslation() {
@@ -503,9 +533,9 @@ void visOdo_state::accumulateMovement() {
 	
 	std::chrono::duration<double> diff = (now - this->lastTS); // in seconds
 	
-	this->hdg += (this->last_rot * diff.count());
-	this->posX += ((this->last_transX * cos(this->hdg)) * diff.count());
-	this->posY += (this->last_transY * sin(this->hdg) * diff.count());
+	this->hdg += this->last_rot; //(this->last_rot * diff.count());
+	this->posX += this->last_transX; //((this->last_transX * cos(this->hdg)) * diff.count());
+	this->posY += this->last_transY; //(this->last_transY * sin(this->hdg) * diff.count());
 	
 	
 	this->lastTS = now;
@@ -617,41 +647,44 @@ int main() {
 	
 	cv::VideoCapture cam(0);
 	
+	if(!cam.isOpened())
+		return -1;
+
 	cameraSize = cv::Size(cam.get(CV_CAP_PROP_FRAME_WIDTH), cam.get(CV_CAP_PROP_FRAME_HEIGHT));
-	
+
 	cv::Mat currentVectorPos(cameraSize, CV_8UC3);
 
 	cv::createTrackbar(groundTrackbarName, processWindowName, &groundTop, cameraSize.height, onTrackbarUpdate);
 	cv::createTrackbar(skyTrackbarName, processWindowName, &skyBottom, cameraSize.height, onTrackbarUpdate);
 	
-	if(!cam.isOpened())
-		return -1;
+	cam.set(CV_CAP_PROP_FPS, 15.0);
 
 	std::chrono::steady_clock::time_point lst = std::chrono::steady_clock::now();
 	double fpsSum = 0;
 	unsigned int nFrames = 0;
+	double t = (double)cv::getTickCount();
 
 	while(true) {
 		cv::Mat img;
 		cam >> img;
 
-		if(odoSt.ttl == 0) {
-			currentVectorPos = cv::Mat::zeros(img.size(), img.type());
-		}
-		
-		double t = (double)cv::getTickCount();
+		cv::Mat blurOut;
+		//cv::bilateralFilter(img, blurOut, 9, 9*2, 9/2);
+		cv::GaussianBlur(img, blurOut, cv::Size(9,9), 0, 0);
 
-		cv::Mat inImg(img.size(), CV_8U);
-		cv::cvtColor(img, inImg, CV_BGR2GRAY, 1);
+		//if(odoSt.ttl == 0) {
+			currentVectorPos = cv::Mat::zeros(img.size(), img.type());
+			posOutputWindow = cv::Mat::zeros(cv::Size(800, 800), CV_8UC3);
+		//}
 		
+		
+
+		cv::Mat inImg(blurOut.size(), CV_8U);		
+		cv::cvtColor(blurOut, inImg, CV_BGR2GRAY, 1);
+
 		odoSt.doCycle(inImg);
 
-		double fps = 1 / (((double)cv::getTickCount() - t) / cv::getTickFrequency());
-		
-		fpsSum += fps;
-		nFrames++;
-
-		cv::Mat copy = img; //inImg.clone();
+		cv::Mat copy = blurOut; //inImg.clone();
 		
 		for(visOdo_feature& i : odoSt.trackpoints) {
 				cv::Point pt = i[0];
@@ -666,23 +699,32 @@ int main() {
 		//std::cout << "ttl: " << odoSt.ttl << std::endl;
 		//std::cout << "Number points: " << odoSt.lastPoints.size() << std::endl;
 
-		if(odoSt.ttl == 0) {
+		//if(odoSt.ttl == 0) {
 			unsigned int posXft = (unsigned int)(odoSt.posX * 3.28084);
 			unsigned int posYft = (unsigned int)(odoSt.posY * 3.28084);
+
+			double compassNeedleX = hdgVectorLen * cos(odoSt.hdg + (PI / 2));
+			double compassNeedleY = hdgVectorLen * sin(odoSt.hdg + (PI / 2));
 			
 			posOutputWindow.at<cv::Scalar>(cv::Point(posXft+400, posYft+400)) = posColor;
-		}
+			cv::line(posOutputWindow, cv::Point(400, 400), cv::Point(400+compassNeedleX, 400+compassNeedleY), hdgColor);
+		//}
 		
+		double fps = 1 / (((double)cv::getTickCount() - t) / cv::getTickFrequency());
+		fpsSum += fps;
+		nFrames++;
+		t = (double)cv::getTickCount();
+
 		cv::line(copy, cv::Point(0, groundTop), cv::Point(cameraSize.width-1, groundTop), groundColor);
 		cv::line(copy, cv::Point(0, skyBottom), cv::Point(cameraSize.width-1, skyBottom), skyColor);
 
 		cv::putText(copy, "current fps: " + std::to_string(fpsSum / nFrames) + " (" + std::to_string(fps) + ")", cv::Point(50, 25), cv::FONT_HERSHEY_SIMPLEX, 1.0, textColor);
-		cv::putText(copy, "current heading: " + std::to_string(odoSt.hdg), cv::Point(50, 50),cv::FONT_HERSHEY_SIMPLEX, 1.0, textColor);
+		cv::putText(copy, "current heading: " + std::to_string(odoSt.hdg * (180 / PI)), cv::Point(50, 50),cv::FONT_HERSHEY_SIMPLEX, 1.0, textColor);
 		cv::putText(copy, "number features: " + std::to_string(odoSt.trackpoints.size()), cv::Point(50, 75), cv::FONT_HERSHEY_SIMPLEX, 1.0, textColor);
 		
 		cv::putText(copy, "velX:  " + std::to_string(odoSt.last_transX), cv::Point(50, 125), cv::FONT_HERSHEY_SIMPLEX, 1.0, textColor);
 		cv::putText(copy, "velY:  " + std::to_string(odoSt.last_transY), cv::Point(50, 150), cv::FONT_HERSHEY_SIMPLEX, 1.0, textColor);
-		cv::putText(copy, "velRot: " + std::to_string(odoSt.last_rot * (PI / 180)), cv::Point(50, 175), cv::FONT_HERSHEY_SIMPLEX, 1.0, textColor);
+		cv::putText(copy, "velRot: " + std::to_string(odoSt.last_rot * (180 / PI)), cv::Point(50, 175), cv::FONT_HERSHEY_SIMPLEX, 1.0, textColor);
 		
 		cv::imshow(processWindowName, copy);
 		cv::imshow(posWindowName, posOutputWindow);

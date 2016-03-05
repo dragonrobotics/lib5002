@@ -61,12 +61,12 @@ const double PI = 3.14159265359;
 const double cameraTiltAngle = 0.0; // 90 degrees from ground (principal ray parallel to ground plane)
 const double cameraVFOV = 35.4 * (PI / 180.0); // Camera vertical FOV in radians.
 const double cameraHFOV = 59.1 * (PI / 180.0); // Camera horizontal FOV in radians.
-const double cameraHeight = 0; // Height of camera off ground in meters.
+const double cameraHeight = 1; // Height of camera off ground in meters.
 
 /*
 * ALGORITHM PARAMETERS
 */
-const unsigned int nFeaturesTracked = 200;
+const unsigned int nFeaturesTracked = 500;
 const double minFeatureQuality = 0.005;
 const unsigned int minDistFeatures = 20; // pixels
 
@@ -84,8 +84,8 @@ const unsigned int vecQualityDecay  = 1;	// every cycle removes this from each f
 
 const unsigned char vecHistoryLen = 7;
 
-int groundTop = 340;			// beginning of horizon zone
-int skyBottom = 300;			// end of horizon zone
+int groundTop = 425;			// beginning of horizon zone
+int skyBottom = 325;			// end of horizon zone
 
 const unsigned int consensusRandGroupSz = 40;	// number of elements to get consensus for
 
@@ -115,7 +115,7 @@ struct visOdo_vector {
 	bool operator==(cv::Point& frm) { return (frm.x == frmX) && (frm.y == frmY); };
 	bool operator==(cv::Point2f& frm) { return (std::floor(frm.x) == frmX) && (std::floor(frm.y) == frmY); };
 	bool operator==(visOdo_vector& rhs) { return (rhs.id == this->id); };
-} __attribute__((packed)); // size: 28 bytes
+}; //__attribute__((packed)); // size: 28 bytes
 
 struct visOdo_feature {
 	visOdo_vector history[vecHistoryLen+1];
@@ -136,7 +136,7 @@ struct visOdo_feature {
 	}
 
 	template<typename T> visOdo_feature(T firstPoint, unsigned short id);
-}  __attribute__((packed)); // size: (28 * vecHistoryLen+1) + 6 + (8*3) or 202 bytes if vecHistoryLen == 8
+};  //__attribute__((packed)); // size: (28 * vecHistoryLen+1) + 6 + (8*3) or 202 bytes if vecHistoryLen == 8
 
 void addFeatureElement(visOdo_feature& o, visOdo_vector& elem) {
 	o.historyHead = (o.historyHead+1) % (vecHistoryLen+1);
