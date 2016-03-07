@@ -32,6 +32,14 @@ double getDistance(cv::Size targetSize, cv::Size fovSize) {
 	//return ((dW + dH) / 2.0); // returns feet
 }
 
+double getDistance(double tW, double fW, double fovAngle) {
+	return (tW * fW) / (targetSize.width * tan(fovAngle));
+}
+
+double getAngleOffCenter(double dX, double sX, double fovAngle) {
+	return (((sX/2) - dX) / sX) * (fovAngle/2);
+}
+
 double getFOVAngleHoriz(cv::Size targetSize, cv::Size fovSize, double distance) {
 	return atan2(targetWidth * fovSize.width, targetSize.width * distance);
 }
