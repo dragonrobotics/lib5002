@@ -144,15 +144,18 @@ struct goal_distance_msg : public message_payload {
 	};
 	
 	goal_status status;	//!< Goal observed yes / no
-	double distance;	//!< Distance to goal.
 	double score;		//!< Score of best goal found
-	double angleOffTarget;	//!< Angle off of goal (left or right NOT specified)
+	
+	double distanceLeft;	//!< Distance to left side of goal.
+	double horizAngleLeft;	//!< Angle to left side of goal from center
+	double distanceRight;	//!< Distance to right side of goal.
+	double horizAngleRight;	//!< Angle to right side of goal from center.
 	
 	/*! \fn goal_distance_msg()
 	 *  \brief Creates a goal message that describes an unfound goal.
 	 */
-	goal_distance_msg() : status(goal_status::GOAL_NOT_FOUND), distance(0), score(0), angleOffTarget(0) {};
-	goal_distance_msg(bool stat, double dist, double sc, double aot);
+	goal_distance_msg() : status(goal_status::GOAL_NOT_FOUND), score(0), distanceLeft(0), horizAngleLeft(0), distanceRight(0), horizAngleRight(0) {};
+	goal_distance_msg(bool stat, double sc, double dL, double aL, double dR, double aR);
 
 	message_type typeof_data() { return message_type::GOAL_DISTANCE; };
 	void tobuffer(nbstream& stream);
