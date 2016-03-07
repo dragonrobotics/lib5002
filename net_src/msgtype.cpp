@@ -100,8 +100,8 @@ std::unique_ptr<message_payload> message::unwrap_packet() {
  *  \param sc Score of found goal.
  *  \param aot Angle off centerline from found goal.
  */
-goal_distance_msg::goal_distance_msg(bool stat, double sc, double dL, double aL, double dR, double aR) :
-	score(sc), distanceLeft(dL), horizAngleLeft(aL), distanceRight(dR), horizAngleRight(aR) {
+goal_distance_msg::goal_distance_msg(bool stat, double sc, double angle, double distance) :
+	score(sc), horizAngleMid(angle), distanceBottom(distance) {
 	if(stat) {
 		status = goal_status::GOAL_FOUND;
 	} else {
@@ -113,20 +113,14 @@ void goal_distance_msg::tobuffer(nbstream& stream) {
 	stream.put8(static_cast<uint8_t>(status));
 	stream.putDouble(score);
 	
-	stream.putDouble(distanceLeft);
-	stream.putDouble(horizAngleLeft);
-	
-	stream.putDouble(distanceRight);
-	stream.putDouble(horizAngleRight);
+	stream.putDouble(horizAngleMid);
+	stream.putDouble(distanceBottom);
 }
 
 void goal_distance_msg::frombuffer(nbstream& stream) {
 	status = static_cast<goal_status>(stream.get8());
 	score = stream.getDouble();
 	
-	distanceLeft = stream.getDouble();
-	horizAngleLeft = stream.getDouble();
-	
-	distanceRight = stream.getDouble();
-	horizAngleRight = stream.getDouble();
+	horizAngleMid = stream.getDouble();
+	distanceBottom = stream.getDouble();
 }
