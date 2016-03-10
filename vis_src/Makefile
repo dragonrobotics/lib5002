@@ -13,11 +13,11 @@ VIS_OBJ_COM_PATH := $(addprefix $(VIS_OBJ_OUT_PATH), $(VIS_COMMON_OBJECT_FILES))
 
 VIS_INC_FLAGS := $(addprefix -I, $(VIS_INCLUDE_DIRS))
 ifeq ($(ARCH), X86-64)
-VIS_LIB_FLAGS := -L$(OPENCV-DIR) -lopencv_shape -lopencv_stitching -lopencv_objdetect -lopencv_superres -lopencv_videostab -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_video -lopencv_photo -lopencv_ml -lopencv_imgproc -lopencv_flann -lopencv_core $(OPENCV-3RDPARTY-DIR)/libzlib.a
+VIS_LIB_FLAGS := -L$(OPENCV-DIR) -lopencv_imgcodecs -lopencv_shape -lopencv_stitching -lopencv_objdetect -lopencv_superres -lopencv_videostab -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_video -lopencv_photo -lopencv_ml -lopencv_imgproc -lopencv_flann -lopencv_core $(OPENCV-3RDPARTY-DIR)/libzlib.a
 endif
 
 ifeq ($(ARCH), ARM)
-VIS_LIB_FLAGS := -L$(OPENCV-DIR) -lopencv_shape -lopencv_videoio -lopencv_imgcodecs -lopencv_video -lopencv_imgproc -lopencv_core $(OPENCV-3RDPARTY-DIR)/libzlib.a
+VIS_LIB_FLAGS := -L$(OPENCV-DIR) -lopencv_imgcodecs -lopencv_shape -lopencv_videoio -lopencv_video -lopencv_imgproc -lopencv_core $(OPENCV-3RDPARTY-DIR)/libzlib.a
 endif
 
 $(VIS_OBJ_OUT_PATH):

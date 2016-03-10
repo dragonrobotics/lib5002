@@ -2,15 +2,19 @@
 
 #include "sockwrap.h"
 #include "msgtype.h"
+#include "wpilib_cameraserver.h"
 #include "visproc_interface.h"
-#include <iostream>
 #include "opencv2/videoio.hpp"
 #include "opencv2/imgproc.hpp"
+#include <iostream>
 #include <thread>
 #include <mutex>
+#include <unordered_map>
 
 const int serverPort = 5800;
 std::mutex cout_mutex;
+
+const int visionRecvFPS = 15;
 
 struct threadholder {
 	std::thread discover;
@@ -20,17 +24,30 @@ struct threadholder {
 	std::vector<std::thread> connections;
 } serverThreads;
 
+std::unordered_map<std::thread::id, std::string> threadFriendlyNames;
+
+void registerThread(std::string id) {
+	threadFriendlyNames[std::this_thread::get_id()] = id;
+}
+
+void lockedPrint(std::string str) {
+	std::lock_guard<std::mutex> lock(cout_mutex);
+	std::cout << "[" << threadFriendlyNames[std::this_thread::get_id()] << "] "  << str << std::endl;
+}
+
 void disc_server() {
 	serverSocket sock(serverPort, SOCK_DGRAM);
-	{ std::lock_guard<std::mutex> lock(cout_mutex); std::cout << "[discServ] Listening on " << (std::string)sock.getbindaddr() << std::endl; }
-
+	
+	registerThread("discover");
+	lockedPrint(std::string("Listening on ") + (std::string)sock.getbindaddr());
+	
 	while(true) {
 		netmsg msg = sock.recv(0);
 		
 		if(message::is_valid_message(static_cast<void*>(msg.getbuf().get()))) {
 			std::shared_ptr<message> msgdata(reinterpret_cast<message*>(msg.getbuf().get()));
 			if(msgdata->type == message_type::DISCOVER) {
-				std::cout << "Received DISCOVER message from " << (std::string)msg.addr << std::endl;
+				lockedPrint(std::string("Received DISCOVER message from ") + (std::string)msg.addr);
 				discover_msg retm(origin_t::JETSON);
 				netmsg out = message::wrap_packet(&retm);
 				out.addr = msg.addr;
@@ -48,15 +65,13 @@ void periodic() {
 	serverSocket broadSock;
 	broadSock.setBroadcast();
 
-	{
-		std::lock_guard<std::mutex> lock(cout_mutex);
-		std::cout << "[periodic] Periodic thread running, broadcast address: " << (std::string)bcast << std::endl;
-	}
+	registerThread("periodic");
+	lockedPrint(std::string("Periodic thread running, broadcast address: ") + (std::string)bcast);
 	
 	while(true) {
 		discover_msg discMsg;
 
-		netmsg discPacket = message::wrap_packet(&discMsg, SOCK_DGRAM);
+		netmsg discPacket = message::wrap_packet(&discMsg);
 		discPacket.addr = bcast;
 
 		broadSock.send(discPacket);
@@ -64,39 +79,35 @@ void periodic() {
 	}
 }
 
+std::mutex visionDataMutex;
 bool currentStatus;
-double currentScore;
-double currentDistance;
-std::mutex visionScoreMutex;
+double currentScore = -1;
+double currentDistance = -1;
+double currentAngle = -1;
 
-void vision_thread() {
-	cv::VideoCapture camera(0);
-	
-	if(!camera.isOpened()) {
-		std::lock_guard<std::mutex> lock(cout_mutex); 
-		std::cerr << "[vision] Could not open camera." << std::endl;
-		return;
-	}
 
-	{
-		std::lock_guard<std::mutex> lock(cout_mutex);
-		std::cout << "[vision] Vision thread running." << std::endl;
-	}
+void vision_thread(netaddr serverAddress) {
+	registerThread("vision-"+(std::string)serverAddress);
+
+	connSocket vSock = connectToCamServer(serverAddress, visionRecvFPS, cs_imgSize::SZ_640x480);
+
+	lockedPrint("Vision thread running.");
 
 	while(true) {
-		cv::Mat src;
-				
-		camera >> src;
+		cv::Mat src = getImageFromServer(vSock);
 	
 		scoredContour out = goal_pipeline(goal_preprocess_pipeline(src));
 		double dist = -1;
+		double angle = -1;
 		if( out.second.size() > 0 ) {
 			cv::Rect bounds = cv::boundingRect(out.second);
-			dist = getDistance(bounds.size(), src.size());
+			cv::Size frameSz = src.size();
+			dist = getDistance(bounds.height, goalSz.height, frameSz.height, fovVert);
+			angle = getAngleOffCenter(bounds.x + (bounds.width/2), frameSz.width, fovHoriz);
 		}
 
 		{
-			std::lock_guard<std::mutex> lock(visionScoreMutex);
+			std::lock_guard<std::mutex> lock(visionDataMutex);
 
 			if( out.second.size() > 0 ) {
 				currentStatus = true;
@@ -108,6 +119,7 @@ void vision_thread() {
 			}
 
 			currentDistance = dist;
+			currentAngle = angle;
 		}
 	}
 }
@@ -115,6 +127,8 @@ void vision_thread() {
 void conn_server(connSocket&& sock) {
 	connSocket dataSock(std::move(sock));
 	
+	registerThread("conn-"+(std::string)sock.getaddr());
+
 	while(true) {
 		netmsg msg = dataSock.recv(0);
 
@@ -122,9 +136,13 @@ void conn_server(connSocket&& sock) {
 			std::shared_ptr<message> msgdata(reinterpret_cast<message*>(msg.getbuf().get()));
 
 			if(msgdata->type == message_type::GET_GOAL_DISTANCE) {
-				std::lock_guard<std::mutex> lock(visionScoreMutex);
-				goal_distance_msg retm(currentStatus, currentDistance, currentScore);
-				dataSock.send(message::wrap_packet(&retm, SOCK_STREAM));
+				std::lock_guard<std::mutex> lock(visionDataMutex);
+				goal_distance_msg retm(currentStatus, currentScore, currentAngle, currentDistance);
+				dataSock.send(message::wrap_packet(&retm));
+			} else if(msgdata->type == message_type::START_VIDEO_STREAM) {
+				if(serverThreads.vision.get_id() == std::thread::id()) {
+					serverThreads.vision = std::thread(vision_thread, dataSock.getaddr());				
+				}
 			}
 		}	
 	}
@@ -133,18 +151,13 @@ void conn_server(connSocket&& sock) {
 void listen_server() {
 	serverSocket listenSock(serverPort, SOCK_STREAM);
 		
-	{
-		std::lock_guard<std::mutex> lock(cout_mutex);
-		std::cout << "[listen] Listening for connections." << std::endl;
-	}
+	registerThread("listen");
+	lockedPrint("Listening for connections.");
 
 	while(true) {
 		connSocket dataSock = listenSock.waitForConnection();
 		netaddr addr = dataSock.getaddr();
-		{
-			std::lock_guard<std::mutex> lock(cout_mutex);
-			std::cout << "[listen] Connection from " << (std::string)addr << std::endl;
-		}
+		lockedPrint(std::string("Connection from ") + (std::string)addr);
 		serverThreads.connections.push_back(std::thread(conn_server, std::move(dataSock)));		
 	}
 }
@@ -153,15 +166,18 @@ int main() {
 	// kick off all threads
 	serverThreads.discover = std::thread(disc_server);
 	serverThreads.periodic = std::thread(periodic);
-	serverThreads.vision = std::thread(vision_thread);
 	serverThreads.listen = std::thread(listen_server);
 	
 	serverThreads.discover.join();	
 	serverThreads.periodic.join();
 	serverThreads.listen.join();
-	serverThreads.vision.join();
+
 	for(std::thread& i : serverThreads.connections) {
 		i.join();	
+	}
+
+	if((serverThreads.vision.get_id() != std::thread::id()) && serverThreads.vision.joinable()) {
+		serverThreads.vision.join();
 	}
 	return 0;
 }

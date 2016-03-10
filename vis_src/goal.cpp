@@ -19,17 +19,14 @@ const double goalAS = goalSz.width / goalSz.height;
 typedef std::pair<double, double> distancePair;
 typedef std::pair<double, double> anglePair;
 
-const double fovHoriz = 0.776417; // rad
-const double fovVert = 0.551077; // rad
-
 // get horizontal angles to goal sides: left then right
 anglePair getAnglesToGoalSides(scoredContour contour, cv::Size frameSize) {
 	anglePair ret;
-	cv::Rect boundingBox = cv::boundingRect(contour.second)
+	cv::Rect boundingBox = cv::boundingRect(contour.second);
 	cv::Point bl = cv::Point(boundingBox.x, boundingBox.y+boundingBox.height); // bottom left corner
 	
-	ret.first = ((2*((frameSize.width/2)-boundingBox.x)) / frameSize.width) * fovHoriz;
-	ret.second = ((2*((frameSize.width/2)-boundingBox.br().x)) / frameSize.width) * fovHoriz;
+	ret.first = ((2*(boundingBox.x-(frameSize.width/2))) / frameSize.width) * fovHoriz;
+	ret.second = ((2*(boundingBox.br().x - (frameSize.width/2))) / frameSize.width) * fovHoriz;
 	
 	return ret;
 }
@@ -37,7 +34,7 @@ anglePair getAnglesToGoalSides(scoredContour contour, cv::Size frameSize) {
 // get vertical distances to goal bottom and top (in order)
 distancePair getDistancesToGoalSides(scoredContour contour, cv::Size frameSize) {
 	distancePair ret;
-	cv::Rect boundingBox = cv::boundingRect(contour.second)
+	cv::Rect boundingBox = cv::boundingRect(contour.second);
 	cv::Point bl = cv::Point(boundingBox.x, boundingBox.y+boundingBox.height); // bottom left corner
 	
 	

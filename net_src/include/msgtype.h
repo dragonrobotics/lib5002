@@ -20,6 +20,7 @@ enum class message_type : unsigned char {
 	GOAL_DISTANCE = 4,		//!< Type for goal distance data packets (Jetson to Rio only)
 	DISCOVER = 5,			//!< Type for UDP discovery packets (bidirectional)
 	VIDEO_STREAM = 6,		//!< Type for raw OpenCV matrix video data streams
+	START_VIDEO_STREAM = 7,		//!< Type for advertising WPILib video streams.
 };
 
 /*! \class message_payload

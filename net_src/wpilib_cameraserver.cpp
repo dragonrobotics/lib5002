@@ -26,7 +26,7 @@ connSocket connectToCamServer(netaddr serverAddress,
 	opening.put32(static_cast<uint32_t>(-1));
 	opening.put32(static_cast<unsigned int>(sz));
 
-	netmsg msg(opening.tobuf(), opening.getbufsz(), SOCK_STREAM);
+	netmsg msg(opening.tobuf(), opening.getbufsz());
 
 	connSocket cs_connection(serverAddress);
 	cs_connection.send(msg);
@@ -36,21 +36,25 @@ connSocket connectToCamServer(netaddr serverAddress,
 
 cv::Mat getImageFromServer(connSocket& cs_socket) {
 	while(true) {
-		netmsg headerData = cs_socket.recv(8); // 600 * 480 * 3 bytes of JPEG data at max + 8 bytes of header
+		nbstream headerStream;
+		while(true) {
+			netmsg headerData = cs_socket.recv(8); // 600 * 480 * 3 bytes of JPEG data at max + 8 bytes of header
+			
+			headerStream = nbstream(headerData.getbuf(), headerData.getbufsz());
 
-		nbstream headerStream(headerData.getbuf(), headerData.getbufsz());
-		unsigned char header[4] = { headerStream.get8(), headerStream.get8(), headerStream.get8(), headerStream.get8() };
+			unsigned char header[4] = { headerStream.get8(), headerStream.get8(), headerStream.get8(), headerStream.get8() };
 
-		bool valid_header = true;
-		for(int i=0;i<4;i++) {
-			if(header[i] != cs_header[i]) {
-				valid_header = false;
-				break;		
+			bool valid_header = true;
+			for(int i=0;i<4;i++) {
+				if(header[i] != cs_header[i]) {
+					valid_header = false;
+					break;		
+				}
 			}
-		}
 
-		if(!valid_header) {
-			continue;
+			if(!valid_header) {
+				continue;
+			}
 		}
 
 		int sz = headerStream.get32();

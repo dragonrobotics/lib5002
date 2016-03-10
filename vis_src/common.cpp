@@ -10,9 +10,6 @@
 const double fovHoriz = 0.776417; // rad
 const double fovVert = 0.551077; // rad
 
-const double targetWidth = 20.0; // inches
-const double targetHeight = 12.0; // inches
-
 bool scoresort(scoredContour c1, scoredContour c2) {
         return (c1.first < c2.first);
 }
@@ -23,58 +20,29 @@ double scoreDistanceFromTarget(const double target, double value) {
 }
 
 /* fovWidth = width of input image in pixels */
-double getDistance(cv::Size targetSize, cv::Size fovSize) {
-	double dW = targetWidth * fovSize.width / (targetSize.width * tan(fovHoriz));
-	//double dH = targetHeight * fovSize.height / (targetSize.height * tan(fovVert));
+double getDistance(cv::Size observedSize, cv::Size targetSize, cv::Size fovSize) {
+	double dW = (targetSize.width * fovSize.width) / (observedSize.width * tan(fovHoriz));
+	//double dH = targetSize.height * fovSize.height / (observedSize.height * tan(fovVert));
 
 	return dW;
 
 	//return ((dW + dH) / 2.0); // returns feet
 }
 
-double getDistance(double tW, double fW, double fovAngle) {
-	return (tW * fW) / (targetSize.width * tan(fovAngle));
+double getDistance(double observedHeight, double targetHeight, double frameHeight, double fovAngle) {
+	return (targetHeight * frameHeight) / (observedHeight * tan(fovAngle)); // tan(fovAngle) = (frameHeight[px/ft] / distance[px/ft]);
 }
 
-double getAngleOffCenter(double dX, double sX, double fovAngle) {
-	return (((sX/2) - dX) / sX) * (fovAngle/2);
+double getAngleOffCenter(double midpointX, double frameWidth, double fovAngle) {
+	return ((midpointX - (frameWidth/2)) / frameWidth) * (fovAngle/2);
 }
 
-double getFOVAngleHoriz(cv::Size targetSize, cv::Size fovSize, double distance) {
-	return atan2(targetWidth * fovSize.width, targetSize.width * distance);
+double getFOVAngleHoriz(cv::Size observedSize, cv::Size targetSize, cv::Size fovSize, double distance) {
+	return atan2(targetSize.width * fovSize.width, observedSize.width * distance);
 }
 
-double getFOVAngleVert(cv::Size targetSize, cv::Size fovSize, double distance) {
-	return atan2(targetHeight * fovSize.height, targetSize.height * distance);
-}
-
-/* returns angle off center horizontal and angle off center vertical */
-std::pair<double, double> getRelativeAngleOffCenter(scoredContour object, cv::Size fovSize, double distance) {
-	std::pair<double, double> out;
-
-	cv::Moments m = cv::moments(object.second);
-	double cX = m.m10 / m.m00;
-	double cY = m.m01 / m.m00;
-	
-	double xAxis = fovSize.height / 2;
-	double yAxis = fovSize.width / 2;
-
-	double dX = abs(yAxis - cX);
-	double dY = abs(xAxis - cY);
-	
-	if(cX < yAxis) { // left of center
-		out.first = asin(dX / distance);
-	} else {
-		out.first = -asin(dX / distance);
-	}
-
-	if(cY < xAxis) { // above center
-		out.second = asin(dY / distance);
-	} else {
-		out.second = -asin(dY / distance);
-	}
-
-	return out;
+double getFOVAngleVert(cv::Size observedSize, cv::Size targetSize, cv::Size fovSize, double distance) {
+	return atan2(targetSize.height * fovSize.height, observedSize.height * distance);
 }
 
 double getAngleOffCenterline(cv::Size targetSz, cv::Size obsSz) {
