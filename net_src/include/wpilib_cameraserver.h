@@ -22,4 +22,4 @@ enum class cs_imgSize : unsigned int {
 extern connSocket connectToCamServer(netaddr serverAddress, int fps, cs_imgSize sz);
 extern cv::Mat getImageFromServer(netaddr serverAddress);
 extern cv::Mat getImageFromServer(connSocket& cs_socket);
-
+extern void setStreamSettings(connSocket& visConn, int fps, cs_imgSize sz);

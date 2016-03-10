@@ -12,6 +12,7 @@
 #include <unordered_map>
 
 const int serverPort = 5800;
+const int visionPort = 5801;
 std::mutex cout_mutex;
 
 const int visionRecvFPS = 15;
@@ -86,41 +87,55 @@ double currentDistance = -1;
 double currentAngle = -1;
 
 
-void vision_thread(netaddr serverAddress) {
-	registerThread("vision-"+(std::string)serverAddress);
+void vision_thread() {
+	registerThread("vision");
 
-	connSocket vSock = connectToCamServer(serverAddress, visionRecvFPS, cs_imgSize::SZ_640x480);
-
-	lockedPrint("Vision thread running.");
+	serverSocket listenSock(visionPort, SOCK_STREAM);
+	
+	lockedPrint("Listening for connections.");
 
 	while(true) {
-		cv::Mat src = getImageFromServer(vSock);
+		connSocket vSock = listenSock.waitForConnection();
+		netaddr addr = vSock.getaddr();
+		lockedPrint(std::string("Connection from ") + (std::string)addr);	
 	
-		scoredContour out = goal_pipeline(goal_preprocess_pipeline(src));
-		double dist = -1;
-		double angle = -1;
-		if( out.second.size() > 0 ) {
-			cv::Rect bounds = cv::boundingRect(out.second);
-			cv::Size frameSz = src.size();
-			dist = getDistance(bounds.height, goalSz.height, frameSz.height, fovVert);
-			angle = getAngleOffCenter(bounds.x + (bounds.width/2), frameSz.width, fovHoriz);
-		}
+		registerThread("vision-"+(std::string)addr);
+		setStreamSettings(vSock, visionRecvFPS, cs_imgSize::SZ_640x480);
+		
+		//connSocket vSock = connectToCamServer(serverAddress, visionRecvFPS, cs_imgSize::SZ_640x480);
 
-		{
-			std::lock_guard<std::mutex> lock(visionDataMutex);
+		lockedPrint("Vision thread running.");
 
+		while(true) {
+			cv::Mat src = getImageFromServer(vSock);
+	
+			scoredContour out = goal_pipeline(goal_preprocess_pipeline(src));
+			double dist = -1;
+			double angle = -1;
 			if( out.second.size() > 0 ) {
-				currentStatus = true;
-				currentScore = out.first;
-				
-			} else {
-				currentStatus = false;
-				currentScore = 0;
+				cv::Rect bounds = cv::boundingRect(out.second);
+				cv::Size frameSz = src.size();
+				dist = getDistance(bounds.height, goalSz.height, frameSz.height, fovVert);
+				angle = getAngleOffCenter(bounds.x + (bounds.width/2), frameSz.width, fovHoriz);
 			}
 
-			currentDistance = dist;
-			currentAngle = angle;
+			{
+				std::lock_guard<std::mutex> lock(visionDataMutex);
+
+				if( out.second.size() > 0 ) {
+					currentStatus = true;
+					currentScore = out.first;
+				
+				} else {
+					currentStatus = false;
+					currentScore = 0;
+				}
+
+				currentDistance = dist;
+				currentAngle = angle;
+			}
 		}
+
 	}
 }
 
@@ -139,10 +154,6 @@ void conn_server(connSocket&& sock) {
 				std::lock_guard<std::mutex> lock(visionDataMutex);
 				goal_distance_msg retm(currentStatus, currentScore, currentAngle, currentDistance);
 				dataSock.send(message::wrap_packet(&retm));
-			} else if(msgdata->type == message_type::START_VIDEO_STREAM) {
-				if(serverThreads.vision.get_id() == std::thread::id()) {
-					serverThreads.vision = std::thread(vision_thread, dataSock.getaddr());				
-				}
 			}
 		}	
 	}
@@ -167,17 +178,16 @@ int main() {
 	serverThreads.discover = std::thread(disc_server);
 	serverThreads.periodic = std::thread(periodic);
 	serverThreads.listen = std::thread(listen_server);
-	
+	serverThreads.vision = std::thread(vision_thread);	
+
 	serverThreads.discover.join();	
 	serverThreads.periodic.join();
 	serverThreads.listen.join();
+	serverThreads.vision.join();
 
 	for(std::thread& i : serverThreads.connections) {
 		i.join();	
 	}
 
-	if((serverThreads.vision.get_id() != std::thread::id()) && serverThreads.vision.joinable()) {
-		serverThreads.vision.join();
-	}
 	return 0;
 }

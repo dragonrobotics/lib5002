@@ -20,18 +20,21 @@ connSocket connectToCamServer(netaddr serverAddress,
 	int fps, cs_imgSize sz) {
 
 	serverAddress.setPort(cs_port);
+	connSocket cs_connection(serverAddress);
+	
+	setStreamSettings(cs_connection, fps, sz);
 
+	return cs_connection;
+}
+
+void setStreamSettings(connSocket& visConn, int fps, cs_imgSize sz) {
 	nbstream opening;
 	opening.put32(fps);
 	opening.put32(static_cast<uint32_t>(-1));
 	opening.put32(static_cast<unsigned int>(sz));
-
 	netmsg msg(opening.tobuf(), opening.getbufsz());
 
-	connSocket cs_connection(serverAddress);
-	cs_connection.send(msg);
-
-	return cs_connection;
+	visConn.send(msg);
 }
 
 cv::Mat getImageFromServer(connSocket& cs_socket) {
