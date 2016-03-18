@@ -76,6 +76,8 @@ netaddr::netaddr(std::string host, int type) {
 	
 	int stat = 0;
 
+	std::cout << "Getting address for host " << host << std::endl;	
+
 	struct addrinfo* res = nullptr;
 	if((stat = getaddrinfo(host.c_str(),
 		NULL,
@@ -84,6 +86,8 @@ netaddr::netaddr(std::string host, int type) {
 		std::cerr << "error reading address info: " <<
 			gai_strerror(stat) << std::endl;
 	}
+
+	
 
 	saddr.reset(res);
 	
@@ -110,10 +114,13 @@ netaddr::netaddr(unsigned int port, int socktype) {
 	
 	int stat;
 
+	std::string portstr = std::to_string(port);
+
 	struct addrinfo *res = nullptr;
-	
+	std::cout << "Getting bind address for port " << portstr << std::endl;	
+
 	if((stat = getaddrinfo(NULL,
-		std::to_string(port).c_str(),
+		portstr.c_str(),
 		&hints,
 		&res)) != 0) {
 		std::cerr << "error reading address info: " <<
@@ -122,8 +129,36 @@ netaddr::netaddr(unsigned int port, int socktype) {
 
 	laddr.reset(res);
 
-	addr.reset(laddr->ai_addr);
-	addrlen = laddr->ai_addrlen;
+	struct addrinfo *good = nullptr;
+
+	if(res == nullptr) {
+		std::cerr << "got no addresses?" << std::endl;
+		return;
+	}
+
+	unsigned int i2 = 0;
+	for(struct addrinfo *i = res;i = i->ai_next;i != nullptr) {
+		std::unique_ptr<char> hostbuf(new char[NI_MAXHOST]);
+		std::cerr << "Checking address " << i2 << std::endl;
+		if(getnameinfo(i->ai_addr, i->ai_addrlen, hostbuf.get(), NI_MAXHOST, NULL, 0, NI_NUMERICHOST) == 0) {
+			std::cerr << "found valid address: " << *hostbuf << std::endl;
+			good = i;
+			break;
+		} else {
+			std::cerr << "found invalid address." << std::endl;
+		}
+		i2++;
+	}
+
+	if(good != nullptr) {
+		std::unique_ptr<struct sockaddr> retaddr(new struct sockaddr);
+		*retaddr = *laddr->ai_addr;
+
+		addr = std::move(retaddr);
+		addrlen = laddr->ai_addrlen;
+	} else {
+		std::cerr << "error reading address info: could not find valid address." << std::endl;
+	}
 }
 
 netaddr::operator sockaddr*() {

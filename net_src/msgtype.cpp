@@ -32,7 +32,7 @@ netmsg message::wrap_packet(message_payload* data) {
 	nbstream stream;
 	data->tobuffer(stream);
 
-	std::cout << "Packet size: 0x" << std::hex << stream.getbufsz() << std::endl;
+	//std::cout << "Packet size: 0x" << std::hex << stream.getbufsz() << std::endl;
 
 	void* buffer = new unsigned char[7+stream.getbufsz()];
 	message* mout = static_cast<message*>(buffer);
@@ -49,7 +49,7 @@ netmsg message::wrap_packet(message_payload* data) {
 		memcpy(buffer+7, dbuf.get(), stream.getbufsz());
 	}
 
-	std::cout << "(network order: 0x" << mout->size << std::dec << ")" << std::endl; 
+	//std::cout << "(network order: 0x" << mout->size << std::dec << ")" << std::endl; 
 
 	return netmsg(static_cast<unsigned char*>(buffer), 7+stream.getbufsz());
 }
@@ -61,21 +61,28 @@ netmsg message::wrap_packet(message_payload* data) {
 std::unique_ptr<message_payload> message::unwrap_packet() {
 	std::unique_ptr<message_payload> out;
 	nbstream stream(this->get_data_start(), (uint32_t)ntohs(this->size));
+	//std::cout << "Message header: " << this->header << std::endl;
+	//std::cout << "Message size: " << std::hex << this->size << std::dec << std::endl;
+	//std::cout << "Message type: " << std::hex << static_cast<int>(this->type) << std::dec << std::endl;
 	switch(this->type) {	
 		case message_type::GET_GOAL_DISTANCE:
 		{
 			out.reset(new get_goal_distance_msg);
 			out->frombuffer(stream);
+			break;
 		}
 		case message_type::GOAL_DISTANCE:
 		{
 			out.reset(new goal_distance_msg);
 			out->frombuffer(stream);
+			break;
 		}			
 		case message_type::DISCOVER:
 		{
+			//std::cout << "Received DISCOVER packet." << std::endl;
 			out.reset(new discover_msg);
 			out->frombuffer(stream);
+			break;
 		}
 		case message_type::GET_STATUS: /* Not implemented. */
 		case message_type::STATUS:

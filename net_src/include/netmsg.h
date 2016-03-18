@@ -24,7 +24,7 @@ public:
 
 	netmsg(std::shared_ptr<unsigned char> buf, size_t bufsz) : data(buf), buflen(bufsz), addr(new struct sockaddr_storage) {};
 
-	explicit netmsg() { netmsg(default_buflen); }
+	explicit netmsg() : data(new unsigned char[default_buflen]), buflen(default_buflen), addr(new struct sockaddr_storage) {};
 	
 	netmsg(const netmsg& rhs) : data(rhs.data), buflen(rhs.buflen), addr(rhs.addr) {};
 

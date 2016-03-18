@@ -3,16 +3,17 @@
 #include "msgtype.h"
 #include "network_bytestream.h"
 
-const int serverPort = 5800;
+const unsigned int serverPort = 5800;
 
 int main() {
 	serverSocket sock(serverPort, SOCK_DGRAM);
 	std::cout << "Listening on " << (std::string)sock.getbindaddr() << std::endl;	
 	while(true) {
-		netmsg msg = sock.recv(0);
+		netmsg msg;
+		msg = sock.recv(0);
 	
 		if(message::is_valid_message(static_cast<void*>(msg.getbuf().get()))) {
-			std::shared_ptr<message> msgdata(reinterpret_cast<message*>(msg.getbuf().get()));
+			message* msgdata = reinterpret_cast<message*>(msg.getbuf().get());
 			if(msgdata->type == message_type::DISCOVER) {
 				std::cout << "Received DISCOVER message from " << (std::string)msg.addr;
 				discover_msg retm(origin_t::JETSON);

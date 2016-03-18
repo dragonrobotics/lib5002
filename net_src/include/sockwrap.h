@@ -11,6 +11,11 @@
 #include "netmsg.h"
 
 /*!
+ * \file sockwrap.h
+ * \brief Holds client and server sockets for both the TCP / UDP potatocols.
+ */
+
+/*!
  * \class connSocket
  * \brief Handles connections to TCP clients and servers.
  */
@@ -34,7 +39,16 @@ public:
 
 	/* ----------------------------------------------------------------- */
 	
+	/*!
+	 * \fn connSocket::getaddr()
+	 * \brief Get the address this socket is connected to.
+	 */
 	netaddr getaddr() { return addr; };
+
+	/*!
+	 * \fn connSocket::getfd()
+	 * \brief Get the file descriptor of this socket.
+	 */
 	int getfd() { return fd; };
 
 	/* ----------------------------------------------------------------- */
@@ -50,7 +64,7 @@ public:
 };
 
 /*!
- * \class ServerSocket
+ * \class serverSocket
  * \brief Handles UDP client and server-side communcations, as well as waiting for TCP communications.
  */
 class serverSocket {
@@ -62,15 +76,25 @@ class serverSocket {
 	
 public:
 
-	serverSocket(int family = AF_INET, int socktype = SOCK_DGRAM) {
+	/*!
+	 * \fn serverSocket::serverSocket(int family = AF_INET, int socktype = SOCK_DGRAM) 
+	 * \brief Create an unbound socket.
+	 */
+	explicit serverSocket(int family = AF_INET, int socktype = SOCK_DGRAM) {
 		fd = -1;
 		this->socktype = socktype;
 		
+		std::cout << "creating unbound socket" << std::endl;
+
 		fd = socket(family,
 			socktype,
 			0);
 	}
 
+	/*!
+	 * \fn serverSocket::serverSocket(unsigned int port, int socktype = SOCK_STREAM)
+	 * \brief Create a socket bound to a local port.
+	 */
 	serverSocket(unsigned int port, int socktype = SOCK_STREAM) : laddr(port, socktype) {
 		fd = -1;
 		this->socktype = socktype;
@@ -112,8 +136,8 @@ public:
 
 	/* ----------------------------------------------------------------- */
 	
-	netmsg&& recv(size_t bufsz, int flags=0);
-	netmsg&& recv(int flags=0);
+	netmsg recv(size_t bufsz, int flags=0);
+	netmsg recv(int flags=0);
 
 	/* ----------------------------------------------------------------- */
 	

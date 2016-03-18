@@ -25,7 +25,7 @@ public:
 	netaddr(std::shared_ptr<struct sockaddr> adrs, size_t len) : addr(adrs), addrlen(len) {};
 	netaddr(const netaddr& rhs) : addr(rhs.addr), addrlen(rhs.addrlen) {};
 
-	netaddr(std::string host, int type = AF_UNSPEC);
+	explicit netaddr(std::string host, int type = AF_UNSPEC);
 	
 	/* get local address for bind */
 	netaddr(unsigned int port, int socktype);
