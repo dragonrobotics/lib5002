@@ -12,7 +12,7 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/videoio.hpp"
-#include "opencv2/highgui.hpp"
+//#include "opencv2/highgui.hpp"
 #include "wpilib_cameraserver.h"
 
 const unsigned int serverPort = 5800;
@@ -89,13 +89,15 @@ void vision_thread() {
 
 		lockedPrint("Vision thread running.");
 
-		cv::namedWindow("Rio Camera");
+		//cv::namedWindow("Rio Camera");
 
 		while(true) {
 			cv::Mat src = getImageFromServer(vSock);
 	
-			cv::imshow("Rio Camera", src);
-			cv::waitKey(30);
+			std::cout << "Got " << src.size().width << " by " << src.size().height << " image." << std::endl;			
+
+			//cv::imshow("Rio Camera", src);
+			//cv::waitKey(30);
 		}
 
 	}

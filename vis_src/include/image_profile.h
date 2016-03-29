@@ -4,7 +4,7 @@
 #include "opencv2/imgcodecs.hpp"
 #include <vector>
 
-extern std::vector<unsigned int> particleHeightProfile(std::vector<cv::Point> contour) ;
+extern std::vector<unsigned int> particleHeightProfile(std::vector<cv::Point> contour); //!< Contour column size profile datatype
 
 // profile analysis:
 // Change of > 10% of total contour height : edge
@@ -13,6 +13,10 @@ extern std::vector<unsigned int> particleHeightProfile(std::vector<cv::Point> co
 //  length of low state
 //  difference between high and low states
 
+/*!
+ * \struct goalProfileData
+ * \brief Holds data extracted from image column profiling
+ */
 struct goalProfileData {
 	unsigned int fallingEdgeStart;
 	unsigned int fallingEdgeEnd;
@@ -27,7 +31,7 @@ struct goalProfileData {
 
 // half the size of the sliding window, rounded down.
 // this gives us a total sliding window of 2(2) + 1 = 5 (1 central value and 2 values on either side)
-const unsigned int prof_HalfSMA = 2;
-const double profileEdgeThreshold = 0.10;
+const unsigned int prof_HalfSMA = 2;		//!< Half of sliding window size.
+const double profileEdgeThreshold = 0.10;	//!< Percentage difference (of max contour height) to consider an "edge"
 
 extern goalProfileData analyzeHeightProfile(std::vector<unsigned int> profile, unsigned int contourHeight)

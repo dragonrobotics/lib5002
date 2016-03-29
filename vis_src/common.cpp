@@ -34,7 +34,7 @@ double getDistance(double observedHeight, double targetHeight, double frameHeigh
 }
 
 double getAngleOffCenter(double midpointX, double frameWidth, double fovAngle) {
-	return ((midpointX - (frameWidth/2)) / frameWidth) * (fovAngle/2);
+	return ((midpointX - (frameWidth/2)) / (frameWidth/2)) * (fovAngle/2);
 }
 
 double getFOVAngleHoriz(cv::Size observedSize, cv::Size targetSize, cv::Size fovSize, double distance) {

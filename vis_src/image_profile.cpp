@@ -1,7 +1,11 @@
 #include "image_profile.h"
 
-// calculate 1-dimensional height profile of a given contour.
-// (y = distance(lowestpoint(x), highestpoint(x)) for all columns x
+/*!
+ * \fn particleHeightProfile(std::vector<cv::Point> contour)
+ * \brief Calculate 1-dimensional height profile of a given contour.
+ *
+ * (y = distance(lowestpoint(x), highestpoint(x)) for all columns x
+ */
 std::vector<unsigned int> particleHeightProfile(std::vector<cv::Point> contour) {
 	cv::Rect bounds = cv::boundingRect(contour);
 	std::vector<unsigned int> distance(bounds.width, 0); // smallest distance from top of bounds to point in column of contour
@@ -18,6 +22,10 @@ std::vector<unsigned int> particleHeightProfile(std::vector<cv::Point> contour) 
 	return distance;
 }
 
+/*!
+ * \fn analyzeHeightProfile(std::vector<unsigned int> profile, unsigned int contourHeight)
+ * \brief Find edges in a one-dimensional height profile.
+ */
 goalProfileData analyzeHeightProfile(std::vector<unsigned int> profile, unsigned int contourHeight) {
 	// A sliding window algorithm is used to detect edges here:
 	

@@ -41,7 +41,8 @@ cv::Mat getImageFromServer(connSocket& cs_socket) {
 	while(true) {
 		nbstream headerStream;
 		while(true) {
-			netmsg headerData = cs_socket.recv(8); // 600 * 480 * 3 bytes of JPEG data at max + 8 bytes of header
+			std::cout << "Waiting on header data..." << std::endl;
+			netmsg headerData = cs_socket.recv_n(8); // 600 * 480 * 3 bytes of JPEG data at max + 8 bytes of header
 			
 			headerStream = nbstream(headerData.getbuf(), headerData.getbufsz());
 
@@ -55,16 +56,20 @@ cv::Mat getImageFromServer(connSocket& cs_socket) {
 				}
 			}
 
-			if(!valid_header) {
-				continue;
-			}
+			if(valid_header)
+				break;
 		}
 
 		int sz = headerStream.get32();
-		netmsg payload = cs_socket.recv(sz);
-		nbstream dataStream(payload.getbuf(), payload.getbufsz());
+		
+		std::cout << "Received " << sz << " bytes." << std::endl;
 
-		std::vector<unsigned char> jpegdata(dataStream.cur, dataStream.buf.end());
+		netmsg payload = cs_socket.recv_n(sz);
+		//nbstream dataStream(payload.getbuf(), payload.getbufsz());
+
+		unsigned char* bufptr = payload.getbuf().get();
+
+		std::vector<unsigned char> jpegdata(bufptr, bufptr+payload.getbufsz()); //jpegdata(dataStream.cur, dataStream.buf.end());
 		return cv::imdecode(jpegdata, CV_LOAD_IMAGE_COLOR);
 	}
 }
