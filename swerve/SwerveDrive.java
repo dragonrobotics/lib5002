@@ -16,10 +16,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
  * SwerveDrive.java -- swerve drive subsystem
  */
 public class SwerveDrive extends Subsystem {
-    SwerveModule fl;
-    SwerveModule fr;
-    SwerveModule bl;
-    SwerveModule br;
+    public SwerveModule fl;
+    public SwerveModule fr;
+    public SwerveModule bl;
+    public SwerveModule br;
 
     public SwerveDrive() {
         fl = new SwerveModule("FL", RobotMap.fl_steer, RobotMap.fl_drive);
@@ -68,6 +68,20 @@ public class SwerveDrive extends Subsystem {
         fr.setDriveSpeed(speed);
         bl.setDriveSpeed(speed);
         br.setDriveSpeed(speed);
+    }
+
+    public void setSteerSpeed(double speed) {
+        fl.setSteerSpeed(speed);
+        fr.setSteerSpeed(speed);
+        bl.setSteerSpeed(speed);
+        br.setSteerSpeed(speed);
+    }
+
+    public void loadConfig() {
+        fl.loadConfigValues();
+        fr.loadConfigValues();
+        bl.loadConfigValues();
+        br.loadConfigValues();
     }
 
     public void updateSD() {

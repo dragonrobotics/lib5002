@@ -92,12 +92,18 @@ public class SwerveModule {
         Preferences.getInstance().putDouble("SpeedControl-"+moduleName, spd);
     }
 
+    public void rezeroSteer() {
+        configSteerOffset(steer.getPosition());
+    }
+
     public CANTalon getDriveController() { return drive; }
     public CANTalon getSteerController() { return steer; }
 
     private double getSteerRange() { return (steerMaxValue - steerMinValue); }
     private double getCurrentSteerPositionNative() { return (steer.getPosition() - steerMinValue) - steerOffset; }
     private double getCurrentSteerPositionDegrees() { return getCurrentSteerPositionNative() * (360.0 / getSteerRange()); }
+
+    public double getCurrentSteerPositionRaw() { return steer.getPosition(); }
 
     private int getCurrentSteerRotations() {
         double nativeUnits = getCurrentSteerPositionNative();
@@ -136,6 +142,14 @@ public class SwerveModule {
         }
 
         drive.set(out);
+    }
+
+    public void setSteerSpeed(double percSpeed) {
+        if(steer.getControlMode() != TalonControlMode.PercentVbus) {
+            steer.changeControlMode(TalonControlMode.PercentVbus);
+        }
+
+    	steer.set(percSpeed);
     }
 
     public void setSteerDegrees(double angle) {
