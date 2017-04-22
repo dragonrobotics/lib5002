@@ -8,6 +8,13 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * SnakeControl.java -- teleop drive control code for linear movement + rotation
+ *
+ * Requires the following OI functions:
+ * double getDriveSpeedCoefficient() - returns a multiplier from 0-1 that affects the overall drive speed.
+ * double getForwardAxis(), double getHorizontalAxis(), double getTurnAxis() - return values from 0-1 that control robot movement.
+ *
+ * @author Sebastian Mobo <stmobo@gmail.com>
+ * @version 1.1, 04/22/2017
  */
 public class SnakeControl extends Command {
 	private static final double joystickDeadband = 0.10;
@@ -15,9 +22,6 @@ public class SnakeControl extends Command {
 
 	public double LENGTH_INCHES = 14.5;
 	public double WIDTH_INCHES = 16.5;
-
-    // If true, then angle changes will be disabled at high speed
-    public static final boolean enableAngleHold = false;
 
 	double[] angles = new double[4];
 	double[] speeds = new double[4];
@@ -64,16 +68,14 @@ public class SnakeControl extends Command {
 		speeds[2] = (maxWs > 1 ? spd_fr / maxWs : spd_fr) * Robot.oi.getDriveSpeedCoefficient();
 		speeds[3] = (maxWs > 1 ? spd_fl / maxWs : spd_fl) * Robot.oi.getDriveSpeedCoefficient();
 
-		if(!enableAngleHold || Robot.oi.arcadeStick.getMagnitude() <= 0.50) {
-			if((Math.abs(fwd) > 0.0)  ||
-				(Math.abs(str) > 0.0) ||
-				(Math.abs(rcw) > 0.0)
-			) {
-				angles[0] = (d==0 && a==0) ? 0.0 : (Math.atan2(a, d) * 180 / Math.PI); // front left
-				angles[1] = (c==0 && a==0) ? 0.0 : (Math.atan2(a, c) * 180 / Math.PI); // front right
-				angles[2] = (c==0 && b==0) ? 0.0 : (Math.atan2(b, c) * 180 / Math.PI); // back right
-				angles[3] = (d==0 && b==0) ? 0.0 : (Math.atan2(b, d) * 180 / Math.PI); // back left
-			}
+		if((Math.abs(fwd) > 0.0)  ||
+			(Math.abs(str) > 0.0) ||
+			(Math.abs(rcw) > 0.0))
+        {
+			angles[0] = (d==0 && a==0) ? 0.0 : (Math.atan2(a, d) * 180 / Math.PI); // front left
+			angles[1] = (c==0 && a==0) ? 0.0 : (Math.atan2(a, c) * 180 / Math.PI); // front right
+			angles[2] = (c==0 && b==0) ? 0.0 : (Math.atan2(b, c) * 180 / Math.PI); // back right
+			angles[3] = (d==0 && b==0) ? 0.0 : (Math.atan2(b, d) * 180 / Math.PI); // back left
 		}
 
 		Robot.drivetrain.setSteerDegrees(angles);

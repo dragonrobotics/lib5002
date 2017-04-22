@@ -14,8 +14,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 
 /**
- * @author stmobo
- * SwerveDrive.java -- swerve drive subsystem
+ * SwerveDrive.java -- Swerve drive subsystem with 4 swerve modules in a square configuration.
+ * @author Sebastian Mobo <stmobo@gmail.com>
+ * @version 2.0, 04/22/2017
  */
 public class SwerveDrive extends Subsystem {
     public SwerveModule fl;

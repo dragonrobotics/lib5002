@@ -11,6 +11,13 @@ import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.networktables.NetworkTablesJNI;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+/**
+ * SwerveModule -- Controls a single swerve module.
+ * This class holds much of the logic and bookkeeping behind the swerve modules.
+ *
+ * @author Sebastian Mobo <stmobo@gmail.com>
+ * @version 1.0, 04/22/2017
+ */
 public class SwerveModule {
     private CANTalon steer;
     private CANTalon drive;

@@ -6,7 +6,13 @@ import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.DriverStation;
 
 /**
+ * SteerCalibrate.java -- Find and record swerve module ranges and zeroing values.
  *
+ * Steers the swerve modules through (at least) one rotation and tracks min/max ADC values,
+ * then saves these values, along with the detected zeroing values, to persistent storage.
+ *
+ * @author Sebastian Mobo <stmobo@gmail.com>
+ * @version 1.1, 04/22/2017
  */
 public class SteerCalibrate extends Command {
 
