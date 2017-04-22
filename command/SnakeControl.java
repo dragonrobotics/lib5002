@@ -13,8 +13,8 @@ public class SnakeControl extends Command {
 	private static final double joystickDeadband = 0.10;
 	private static final double maxDriveOutput = 1.0;
 
-	public static final double LENGTH_INCHES = 14.5;
-	public static final double WIDTH_INCHES = 16.5;
+	public double LENGTH_INCHES = 14.5;
+	public double WIDTH_INCHES = 16.5;
 
     // If true, then angle changes will be disabled at high speed
     public static final boolean enableAngleHold = false;
@@ -22,9 +22,15 @@ public class SnakeControl extends Command {
 	double[] angles = new double[4];
 	double[] speeds = new double[4];
 
+    public SnakeControl(double length, double width) {
+        LENGTH_INCHES = length;
+        WIDTH_INCHES = width;
+
+        requires(Robot.drivetrain);
+    }
+
     private boolean autoAlignButtonDebounce = false;
     protected void execute() {
-
 		double fwd = (Math.abs(Robot.oi.getForwardAxis()) > joystickDeadband) ? Robot.oi.getForwardAxis() : 0.0;
 		double str = (Math.abs(Robot.oi.getHorizontalAxis()) > joystickDeadband) ? Robot.oi.getHorizontalAxis() : 0.0;
 		double rcw = (Math.abs(Robot.oi.getTurnAxis()) > joystickDeadband) ? Robot.oi.getTurnAxis() : 0.0;
@@ -72,10 +78,6 @@ public class SnakeControl extends Command {
 
 		Robot.drivetrain.setSteerDegrees(angles);
 		Robot.drivetrain.setDriveSpeed(speeds);
-    }
-
-    public Teleop() {
-        requires(Robot.drivetrain);
     }
 
     // Called just before this Command runs the first time
