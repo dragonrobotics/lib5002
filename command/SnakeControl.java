@@ -1,7 +1,6 @@
-package org.usfirst.frc.team5002.robot.commands;
+package org.usfirst.frc.team5002.swerve.commands;
 
 import org.usfirst.frc.team5002.robot.Robot;
-import org.usfirst.frc.team5002.robot.subsystems.swerve.*;
 
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.command.Command;

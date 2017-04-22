@@ -9,19 +9,16 @@ import edu.wpi.first.wpilibj.DriverStation;
 /**
  *
  */
-public class SteerRezero extends InstantCommand {
+public class KillDrivetrain extends InstantCommand {
 
-    public SteerRezero() {
+    public KillDrivetrain() {
         requires(Robot.drivetrain);
     }
     protected void execute() {
-        Robot.drivetrain.fl.rezeroSteer();
-        Robot.drivetrain.fr.rezeroSteer();
-        Robot.drivetrain.bl.rezeroSteer();
-        Robot.drivetrain.br.rezeroSteer();
+        Robot.drivetrain.setDriveSpeed(0.0);
     }
 
     protected void initialize() {}
-    protected void end() { Robot.drivetrain.loadConfig(); }
-    protected void interrupted() { end(); }
+    protected void end() {}
+    protected void interrupted() {}
 }

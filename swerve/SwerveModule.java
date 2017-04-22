@@ -1,15 +1,15 @@
-package org.usfirst.frc.team5002.robot.subsystems.swerve;
+package org.usfirst.frc.team5002.swerve.subsystems;
 
 import org.usfirst.frc.team5002.robot.RobotMap;
-import org.usfirst.frc.team5002.robot.commands.KillDrivetrain;
+
 import com.ctre.CANTalon;
 import com.ctre.CANTalon.FeedbackDevice;
 import com.ctre.CANTalon.TalonControlMode;
+
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.networktables.NetworkTablesJNI;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 
 public class SwerveModule {
     private CANTalon steer;
