@@ -40,10 +40,10 @@ serves as a throttle: all speeds are multiplied by the coefficient before being 
 to the swerve drive.
 
 The swerve drive requires the following functions to be exposed by the OI:
- * double getDriveSpeedCoefficient() - returns a multiplier in the range [0, 1] that affects the overall drive speed.
- * double getForwardAxis() - Control input in the range [-1, +1] for forwards (positive values) and backwards (negative values) movement.
- * double getHorizontalAxis() - Control input in the range [-1, +1] for rightward (positive values) and leftward (negative values) strafing.
- * double getTurnAxis() - - Control input in the range [-1, +1] for clockwise (positive values) and counterclockwise (negative values) rotation.
+ * `double getDriveSpeedCoefficient()` - returns a multiplier in the range [0, 1] that affects the overall drive speed.
+ * `double getForwardAxis()` - Control input in the range [-1, +1] for forwards (positive values) and backwards (negative values) movement.
+ * `double getHorizontalAxis()` - Control input in the range [-1, +1] for rightward (positive values) and leftward (negative values) strafing.
+ * `double getTurnAxis()` - - Control input in the range [-1, +1] for clockwise (positive values) and counterclockwise (negative values) rotation.
 
 Note that the swerve module zero-angle positions should be along the robot forward-backwards axis.
 

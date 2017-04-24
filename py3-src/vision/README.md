@@ -2,9 +2,9 @@
 Python vision processing code.
 
 ## pip Dependencies
- * opencv-python
- * numpy
- * pynetworktables
+ * `opencv-python`
+ * `numpy`
+ * `pynetworktables`
 
 ## VisCore (Vision Processing Core)
 This module contains common code for performing the following functions:
