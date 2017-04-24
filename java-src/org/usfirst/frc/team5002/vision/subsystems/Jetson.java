@@ -1,4 +1,4 @@
-package org.usfirst.frc.team5002.robot.subsystems;
+package org.usfirst.frc.team5002.vision.subsystems;
 
 import org.usfirst.frc.team5002.robot.Robot;
 import org.usfirst.frc.team5002.robot.RobotMap;
