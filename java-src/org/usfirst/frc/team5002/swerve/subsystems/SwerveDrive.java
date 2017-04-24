@@ -31,18 +31,12 @@ public class SwerveDrive extends Subsystem {
         br = new SwerveModule("BR", RobotMap.br_steer, RobotMap.br_drive);
     }
 
+
     public void setSteerDegrees(double degrees_fl, double degrees_fr, double degrees_bl, double degrees_br) {
         fl.setSteerDegrees(degrees_fl);
         fr.setSteerDegrees(degrees_fr);
         bl.setSteerDegrees(degrees_bl);
         br.setSteerDegrees(degrees_br);
-    }
-
-    public void setDriveSpeed(double speed_fl, double speed_fr, double speed_bl, double speed_br) {
-        fl.setDriveSpeed(speed_fl);
-        fr.setDriveSpeed(speed_fr);
-        bl.setDriveSpeed(speed_bl);
-        br.setDriveSpeed(speed_br);
     }
 
     public void setSteerDegrees(double[] degrees) {
@@ -52,18 +46,27 @@ public class SwerveDrive extends Subsystem {
         br.setSteerDegrees(degrees[3]);
     }
 
-    public void setDriveSpeed(double[] speed) {
-        fl.setDriveSpeed(speed[0]);
-        fr.setDriveSpeed(speed[1]);
-        bl.setDriveSpeed(speed[2]);
-        br.setDriveSpeed(speed[3]);
-    }
-
     public void setSteerDegrees(double degrees) {
         fl.setSteerDegrees(degrees);
         fr.setSteerDegrees(degrees);
         bl.setSteerDegrees(degrees);
         br.setSteerDegrees(degrees);
+    }
+
+
+
+    public void setDriveSpeed(double speed_fl, double speed_fr, double speed_bl, double speed_br) {
+        fl.setDriveSpeed(speed_fl);
+        fr.setDriveSpeed(speed_fr);
+        bl.setDriveSpeed(speed_bl);
+        br.setDriveSpeed(speed_br);
+    }
+
+    public void setDriveSpeed(double[] speed) {
+        fl.setDriveSpeed(speed[0]);
+        fr.setDriveSpeed(speed[1]);
+        bl.setDriveSpeed(speed[2]);
+        br.setDriveSpeed(speed[3]);
     }
 
     public void setDriveSpeed(double speed) {
@@ -73,12 +76,16 @@ public class SwerveDrive extends Subsystem {
         br.setDriveSpeed(speed);
     }
 
+
+
     public void setSteerSpeed(double speed) {
         fl.setSteerSpeed(speed);
         fr.setSteerSpeed(speed);
         bl.setSteerSpeed(speed);
         br.setSteerSpeed(speed);
     }
+
+
 
     public void loadConfig() {
         fl.loadConfigValues();

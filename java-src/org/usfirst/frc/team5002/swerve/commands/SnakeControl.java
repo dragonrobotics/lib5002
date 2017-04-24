@@ -51,22 +51,22 @@ public class SnakeControl extends Command {
 		double d = fwd + rcw * (WIDTH_INCHES / r);
 		double maxWs;
 
-		double spd_fr = Math.sqrt(Math.pow(b, 2) + Math.pow(c, 2));
-		maxWs = spd_fr;
-
-		double spd_fl = Math.sqrt(Math.pow(b, 2) + Math.pow(d, 2));
+		double spd_fl = Math.sqrt(Math.pow(a, 2) + Math.pow(d, 2));
 		maxWs = spd_fl > maxWs ? spd_fl : maxWs;
 
-		double spd_bl = Math.sqrt(Math.pow(a, 2) + Math.pow(d, 2));
-		maxWs = spd_bl > maxWs ? spd_bl : maxWs;
+		double spd_fr = Math.sqrt(Math.pow(a, 2) + Math.pow(c, 2));
+		maxWs = spd_fr;
 
-		double spd_br = Math.sqrt(Math.pow(a, 2) + Math.pow(c, 2));
+		double spd_br = Math.sqrt(Math.pow(b, 2) + Math.pow(c, 2));
 		maxWs = spd_br > maxWs ? spd_br : maxWs;
 
-		speeds[0] = (maxWs > 1 ? spd_bl / maxWs : spd_bl) * Robot.oi.getDriveSpeedCoefficient();
-		speeds[1] = (maxWs > 1 ? spd_br / maxWs : spd_br) * Robot.oi.getDriveSpeedCoefficient();
-		speeds[2] = (maxWs > 1 ? spd_fr / maxWs : spd_fr) * Robot.oi.getDriveSpeedCoefficient();
-		speeds[3] = (maxWs > 1 ? spd_fl / maxWs : spd_fl) * Robot.oi.getDriveSpeedCoefficient();
+		double spd_bl = Math.sqrt(Math.pow(b, 2) + Math.pow(d, 2));
+		maxWs = spd_bl > maxWs ? spd_bl : maxWs;
+
+        speeds[0] = (maxWs > 1 ? spd_fl / maxWs : spd_fl) * Robot.oi.getDriveSpeedCoefficient();
+		speeds[1] = (maxWs > 1 ? spd_fr / maxWs : spd_fr) * Robot.oi.getDriveSpeedCoefficient();
+		speeds[2] = (maxWs > 1 ? spd_br / maxWs : spd_br) * Robot.oi.getDriveSpeedCoefficient();
+		speeds[3] = (maxWs > 1 ? spd_bl / maxWs : spd_bl) * Robot.oi.getDriveSpeedCoefficient();
 
 		if((Math.abs(fwd) > 0.0)  ||
 			(Math.abs(str) > 0.0) ||

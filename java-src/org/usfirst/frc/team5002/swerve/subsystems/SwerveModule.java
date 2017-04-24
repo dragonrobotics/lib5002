@@ -54,10 +54,6 @@ public class SwerveModule {
         	drive.changeControlMode(TalonControlMode.PercentVbus);
         }
 
-        /* Sensor setup: */
-    	drive.setFeedbackDevice(FeedbackDevice.QuadEncoder);
-    	drive.configEncoderCodesPerRev(40);
-
     	drive.set(0); // Reset to stopped
     }
 
@@ -99,9 +95,8 @@ public class SwerveModule {
         Preferences.getInstance().putDouble("SpeedControl-"+moduleName, spd);
     }
 
-    public void rezeroSteer() {
-        configSteerOffset(steer.getPosition());
-    }
+    public void rezeroSteer() { configSteerOffset(steer.getPosition()); }
+    public void inhibit(boolean status) { inhibited = status; }
 
     public CANTalon getDriveController() { return drive; }
     public CANTalon getSteerController() { return steer; }
