@@ -27,6 +27,8 @@ public class SnakeControl extends Command {
 	double[] angles = new double[4];
 	double[] speeds = new double[4];
 
+    public boolean focEnabled = false;
+
     private Timer angleHoldTimer;
     private boolean angleHoldActive = false;
     private double angleCtrlOut = 0.0;
@@ -46,7 +48,7 @@ public class SnakeControl extends Command {
 
         /* default PIDController iteration period is 0.05.
          * Kp = 0.005 (0.5% rcw difference at 1 deg angle diff)
-         * Td = 0.5  (estimate error at 1/2 sec in future), Kd = 0.005*0.5 = 0.0025*/
+         * Td = 0.5  (estimate error at 1/2 sec in future), Kd = 0.005*0.5 = 0.0025 */
         angleCtrl = new PIDController(0.005, 0.0, 0.0025, navx.navx, (double out) -> { angleCtrlOut = out; });
         angleCtrl.setOutputRange(-0.15, 0.15);
 
@@ -54,13 +56,15 @@ public class SnakeControl extends Command {
     }
 
     protected void execute() {
-		double y = (Math.abs(Robot.oi.getForwardAxis()) > joystickDeadband) ? Robot.oi.getForwardAxis() : 0.0;
-		double x = (Math.abs(Robot.oi.getHorizontalAxis()) > joystickDeadband) ? Robot.oi.getHorizontalAxis() : 0.0;
-        double[] ctrl = navx.getFOCVector(x, y);
-
-        double fwd = ctrl[0];
-        double str = ctrl[1];
+		double fwd = (Math.abs(Robot.oi.getForwardAxis()) > joystickDeadband) ? Robot.oi.getForwardAxis() : 0.0;
+		double str = (Math.abs(Robot.oi.getHorizontalAxis()) > joystickDeadband) ? Robot.oi.getHorizontalAxis() : 0.0;
 		double rcw = (Math.abs(Robot.oi.getTurnAxis()) > joystickDeadband) ? Robot.oi.getTurnAxis() : 0.0;
+
+        if(focEnabled) {
+            double[] ctrl = navx.getFOCVector(str, fwd);
+            fwd = ctrl[0];
+            str = ctrl[1];
+        }
 
         if(Math.abs(Robot.oi.getTurnAxis()) > joystickDeadband) {
             angleHoldActive = false;
@@ -82,7 +86,7 @@ public class SnakeControl extends Command {
         }
 
         if(angleHoldActive) {
-            rcw += angleCtrlOut;
+            rcw = angleCtrlOut;
         }
 
 		if(Math.abs(fwd)>1.0 || Math.abs(str)>1.0 || Math.abs(rcw)>1.0){
