@@ -14,12 +14,15 @@ import edu.wpi.first.wpilibj.DriverStation;
  * @version 1.1, 04/22/2017
  */
 public class KillDrivetrain extends InstantCommand {
+    SwerveDrive drivetrain;
 
-    public KillDrivetrain() {
-        requires(Robot.drivetrain);
+    public KillDrivetrain(SwerveDrive swerve) {
+        drivetrain = swerve;
+        requires(drivetrain);
     }
+    
     protected void execute() {
-        Robot.drivetrain.setDriveSpeed(0.0);
+        drivetrain.setDriveSpeed(0.0);
     }
 
     protected void initialize() {}

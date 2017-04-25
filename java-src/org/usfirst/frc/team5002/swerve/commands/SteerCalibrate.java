@@ -15,24 +15,27 @@ import edu.wpi.first.wpilibj.DriverStation;
  * @version 1.1, 04/22/2017
  */
 public class SteerCalibrate extends Command {
-
+    SwerveDrive drivetrain;
     Timer swerveTime;
+    
     double minObservedADC[] = {1024.0, 1024.0, 1024.0, 1024.0};
     double maxObservedADC[] = {0.0, 0.0, 0.0, 0.0};
 
-    public SteerCalibrate() {
-        requires(Robot.drivetrain);
+    public SteerCalibrate(SwerveDrive swerve) {
+        drivetrain = swerve;
         swerveTime = new Timer();
+
+        requires(drivetrain);
     }
 
     protected void execute() {
-        Robot.drivetrain.setSteerSpeed(1.0);
+        drivetrain.setSteerSpeed(1.0);
 
         int currentADC[] = {
-            Robot.drivetrain.fl.getCurrentSteerPositionRaw(),
-            Robot.drivetrain.fr.getCurrentSteerPositionRaw(),
-            Robot.drivetrain.bl.getCurrentSteerPositionRaw(),
-            Robot.drivetrain.br.getCurrentSteerPositionRaw()
+            drivetrain.fl.getCurrentSteerPositionRaw(),
+            drivetrain.fr.getCurrentSteerPositionRaw(),
+            drivetrain.bl.getCurrentSteerPositionRaw(),
+            drivetrain.br.getCurrentSteerPositionRaw()
         };
 
         for (int i=0; i<4; i++) {
@@ -45,10 +48,10 @@ public class SteerCalibrate extends Command {
     }
 
     protected void initialize() {
-        Robot.drivetrain.fl.rezeroSteer();
-        Robot.drivetrain.fr.rezeroSteer();
-        Robot.drivetrain.bl.rezeroSteer();
-        Robot.drivetrain.br.rezeroSteer();
+        drivetrain.fl.rezeroSteer();
+        drivetrain.fr.rezeroSteer();
+        drivetrain.bl.rezeroSteer();
+        drivetrain.br.rezeroSteer();
 
         swerveTime.reset();
         swerveTime.start();
@@ -59,10 +62,10 @@ public class SteerCalibrate extends Command {
     }
 
     protected void end() {
-        Robot.drivetrain.fl.configSteerRange(maxObservedADC[0], minObservedADC[0]);
-        Robot.drivetrain.fr.configSteerRange(maxObservedADC[1], minObservedADC[1]);
-        Robot.drivetrain.bl.configSteerRange(maxObservedADC[2], minObservedADC[2]);
-        Robot.drivetrain.br.configSteerRange(maxObservedADC[3], minObservedADC[3]);
+        drivetrain.fl.configSteerRange(maxObservedADC[0], minObservedADC[0]);
+        drivetrain.fr.configSteerRange(maxObservedADC[1], minObservedADC[1]);
+        drivetrain.bl.configSteerRange(maxObservedADC[2], minObservedADC[2]);
+        drivetrain.br.configSteerRange(maxObservedADC[3], minObservedADC[3]);
 
         System.out.println("Minimum observed ADC values: "
             + Integer.toString(minObservedADC[0])
@@ -78,9 +81,9 @@ public class SteerCalibrate extends Command {
             + " " + Integer.toString(maxObservedADC[3])
         );
 
-        Robot.drivetrain.setSteerSpeed(0.0);
+        drivetrain.setSteerSpeed(0.0);
 
-        Robot.drivetrain.loadConfig();
+        drivetrain.loadConfig();
     }
 
     protected void interrupted() {}

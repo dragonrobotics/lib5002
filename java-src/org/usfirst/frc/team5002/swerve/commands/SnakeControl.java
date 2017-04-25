@@ -18,7 +18,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class SnakeControl extends Command {
 	private static final double joystickDeadband = 0.10;
-	private static final double maxDriveOutput = 1.0;
 
 	public double LENGTH_INCHES = 14.5;
 	public double WIDTH_INCHES = 16.5;
@@ -26,11 +25,14 @@ public class SnakeControl extends Command {
 	double[] angles = new double[4];
 	double[] speeds = new double[4];
 
-    public SnakeControl(double length, double width) {
+    private SwerveDrive drivetrain;
+
+    public SnakeControl(double length, double width, SwerveDrive swerve) {
         LENGTH_INCHES = length;
         WIDTH_INCHES = width;
+        drivetrain = swerve;
 
-        requires(Robot.drivetrain);
+        requires(drivetrain);
     }
 
     private boolean autoAlignButtonDebounce = false;

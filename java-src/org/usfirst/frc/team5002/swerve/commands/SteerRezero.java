@@ -14,18 +14,21 @@ import edu.wpi.first.wpilibj.DriverStation;
  * @version 1.0, 04/22/2017
  */
 public class SteerRezero extends InstantCommand {
+    SwerveDrive drivetrain;
 
-    public SteerRezero() {
-        requires(Robot.drivetrain);
+    public SteerRezero(SwerveDrive swerve) {
+        drivetrain = swerve;
+        requires(drivetrain);
     }
+
     protected void execute() {
-        Robot.drivetrain.fl.rezeroSteer();
-        Robot.drivetrain.fr.rezeroSteer();
-        Robot.drivetrain.bl.rezeroSteer();
-        Robot.drivetrain.br.rezeroSteer();
+        drivetrain.fl.rezeroSteer();
+        drivetrain.fr.rezeroSteer();
+        drivetrain.bl.rezeroSteer();
+        drivetrain.br.rezeroSteer();
     }
 
     protected void initialize() {}
-    protected void end() { Robot.drivetrain.loadConfig(); }
+    protected void end() { drivetrain.loadConfig(); }
     protected void interrupted() { end(); }
 }
