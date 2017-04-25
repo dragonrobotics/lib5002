@@ -5,6 +5,7 @@ import org.usfirst.frc.team5002.robot.Robot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.Timer;
 
 /**
  * SnakeControl.java -- teleop drive control code for linear movement + rotation
@@ -26,18 +27,63 @@ public class SnakeControl extends Command {
 	double[] angles = new double[4];
 	double[] speeds = new double[4];
 
-    public SnakeControl(double length, double width) {
+    private Timer angleHoldTimer;
+    private boolean angleHoldActive = false;
+    private double angleCtrlOut = 0.0;
+    private PIDController angleCtrl;
+
+    private NavX navx;
+    private SwerveDrive drivetrain;
+
+    public SnakeControl(double length, double width, NavX nv, SwerveDrive sd) {
         LENGTH_INCHES = length;
         WIDTH_INCHES = width;
 
-        requires(Robot.drivetrain);
+        angleHoldTimer = new Timer();
+
+        navx = nv;
+        drivetrain = sd;
+
+        /* default PIDController iteration period is 0.05.
+         * Kp = 0.005 (0.5% rcw difference at 1 deg angle diff)
+         * Td = 0.5  (estimate error at 1/2 sec in future), Kd = 0.005*0.5 = 0.0025*/
+        angleCtrl = new PIDController(0.005, 0.0, 0.0025, navx.navx, (double out) -> { angleCtrlOut = out; });
+        angleCtrl.setOutputRange(-0.15, 0.15);
+
+        requires(swerve);
     }
 
-    private boolean autoAlignButtonDebounce = false;
     protected void execute() {
-		double fwd = (Math.abs(Robot.oi.getForwardAxis()) > joystickDeadband) ? Robot.oi.getForwardAxis() : 0.0;
-		double str = (Math.abs(Robot.oi.getHorizontalAxis()) > joystickDeadband) ? Robot.oi.getHorizontalAxis() : 0.0;
+		double y = (Math.abs(Robot.oi.getForwardAxis()) > joystickDeadband) ? Robot.oi.getForwardAxis() : 0.0;
+		double x = (Math.abs(Robot.oi.getHorizontalAxis()) > joystickDeadband) ? Robot.oi.getHorizontalAxis() : 0.0;
+        double[] ctrl = navx.getFOCVector(x, y);
+
+        double fwd = ctrl[0];
+        double str = ctrl[1];
 		double rcw = (Math.abs(Robot.oi.getTurnAxis()) > joystickDeadband) ? Robot.oi.getTurnAxis() : 0.0;
+
+        if(Math.abs(Robot.oi.getTurnAxis()) > joystickDeadband) {
+            angleHoldActive = false;
+            angleCtrl.reset();
+
+            angleHoldTimer.stop();
+            angleHoldTimer.reset();
+        } else {
+            if(!angleHoldActive) {
+                angleHoldTimer.start();
+                if(angleHoldTimer.hasPeriodPassed(0.1)) {
+                    angleHoldActive = true;
+
+                    angleHoldTimer.stop();
+                    angleCtrl.enable();
+                    angleCtrl.setSetpoint(navx.getRobotHeading());
+                }
+            }
+        }
+
+        if(angleHoldActive) {
+            rcw += angleCtrlOut;
+        }
 
 		if(Math.abs(fwd)>1.0 || Math.abs(str)>1.0 || Math.abs(rcw)>1.0){
 			return;
@@ -78,13 +124,13 @@ public class SnakeControl extends Command {
 			angles[3] = (d==0 && b==0) ? 0.0 : (Math.atan2(b, d) * 180 / Math.PI); // back left
 		}
 
-		Robot.drivetrain.setSteerDegrees(angles);
-		Robot.drivetrain.setDriveSpeed(speeds);
+		drivetrain.setSteerDegrees(angles);
+		drivetrain.setDriveSpeed(speeds);
     }
 
     // Called just before this Command runs the first time
     protected void initialize() {
-		Robot.drivetrain.setSteerDegrees(0.0);
+		drivetrain.setSteerDegrees(0.0);
     }
 
     // Make this return true when this Command no longer needs to run execute()
