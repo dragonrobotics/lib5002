@@ -1,9 +1,8 @@
 package org.usfirst.frc.team5002.swerve.commands;
+import org.usfirst.frc.team5002.swerve.subsystems.*;
 
-import org.usfirst.frc.team5002.robot.Robot;
-
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj.DriverStation;
 
 /**
  * SteerCalibrate.java -- Find and record swerve module ranges and zeroing values.
@@ -17,7 +16,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 public class SteerCalibrate extends Command {
     SwerveDrive drivetrain;
     Timer swerveTime;
-    
+
     double minObservedADC[] = {1024.0, 1024.0, 1024.0, 1024.0};
     double maxObservedADC[] = {0.0, 0.0, 0.0, 0.0};
 
@@ -31,7 +30,7 @@ public class SteerCalibrate extends Command {
     protected void execute() {
         drivetrain.setSteerSpeed(1.0);
 
-        int currentADC[] = {
+        double currentADC[] = {
             drivetrain.fl.getCurrentSteerPositionRaw(),
             drivetrain.fr.getCurrentSteerPositionRaw(),
             drivetrain.bl.getCurrentSteerPositionRaw(),
@@ -68,17 +67,17 @@ public class SteerCalibrate extends Command {
         drivetrain.br.configSteerRange(maxObservedADC[3], minObservedADC[3]);
 
         System.out.println("Minimum observed ADC values: "
-            + Integer.toString(minObservedADC[0])
-            + " " + Integer.toString(minObservedADC[1])
-            + " " + Integer.toString(minObservedADC[2])
-            + " " + Integer.toString(minObservedADC[3])
+            + Double.toString(minObservedADC[0])
+            + " " + Double.toString(minObservedADC[1])
+            + " " + Double.toString(minObservedADC[2])
+            + " " + Double.toString(minObservedADC[3])
         );
 
         System.out.println("Maximum observed ADC values: "
-            + Integer.toString(maxObservedADC[0])
-            + " " + Integer.toString(maxObservedADC[1])
-            + " " + Integer.toString(maxObservedADC[2])
-            + " " + Integer.toString(maxObservedADC[3])
+            + Double.toString(maxObservedADC[0])
+            + " " + Double.toString(maxObservedADC[1])
+            + " " + Double.toString(maxObservedADC[2])
+            + " " + Double.toString(maxObservedADC[3])
         );
 
         drivetrain.setSteerSpeed(0.0);

@@ -1,14 +1,11 @@
 package org.usfirst.frc.team5002.swerve.subsystems;
 
-import org.usfirst.frc.team5002.robot.RobotMap;
-
 import com.ctre.CANTalon;
 import com.ctre.CANTalon.FeedbackDevice;
 import com.ctre.CANTalon.TalonControlMode;
 
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.command.Subsystem;
-import edu.wpi.first.wpilibj.networktables.NetworkTablesJNI;
+import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
@@ -49,7 +46,7 @@ public class SwerveModule {
 
         drive.reverseOutput(driveReversed); // not even sure this works
         if(speedEnabled) {
-        	drive.changeControlMode(TalonControlMode.Velocity);
+        	drive.changeControlMode(TalonControlMode.Speed);
         } else {
         	drive.changeControlMode(TalonControlMode.PercentVbus);
         }
@@ -87,12 +84,12 @@ public class SwerveModule {
 
     public void configDriveReverse(boolean rev) {
         driveReversed = rev;
-        Preferences.getInstance().putDouble("DriveReversed-"+moduleName, rev);
+        Preferences.getInstance().putBoolean("DriveReversed-"+moduleName, rev);
     }
 
     public void configSpeedEnabled(boolean spd) {
         speedEnabled = spd;
-        Preferences.getInstance().putDouble("SpeedControl-"+moduleName, spd);
+        Preferences.getInstance().putBoolean("SpeedControl-"+moduleName, spd);
     }
 
     public void rezeroSteer() { configSteerOffset(steer.getPosition()); }
@@ -120,8 +117,8 @@ public class SwerveModule {
     public void setDriveSpeed(double percSpeed) {
         double out = percSpeed;
         if(speedEnabled) {
-            if(drive.getControlMode() != TalonControlMode.Velocity) {
-                drive.changeControlMode(TalonControlMode.Velocity);
+            if(drive.getControlMode() != TalonControlMode.Speed) {
+                drive.changeControlMode(TalonControlMode.Speed);
             }
             out *= driveMaxSpeed;
         } else {
@@ -143,7 +140,7 @@ public class SwerveModule {
             drive.changeControlMode(TalonControlMode.Position);
         }
 
-        drive.set(out);
+        drive.set(distance);
     }
 
     public void setSteerSpeed(double percSpeed) {
@@ -154,7 +151,7 @@ public class SwerveModule {
     	steer.set(percSpeed);
     }
 
-    public void setSteerDegrees(double angle) {
+    public void setSteerDegrees(double degrees) {
         double currentAngle = getCurrentSteerPositionDegrees();
         double angleAdjustment = getCurrentSteerRotations() * 360.0;
 

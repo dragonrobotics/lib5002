@@ -1,10 +1,7 @@
 package org.usfirst.frc.team5002.swerve.commands;
 
-import org.usfirst.frc.team5002.robot.Robot;
-import org.usfirst.frc.team5002.robot.subsystems.swerve.*;
-
-import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj.DriverStation;
+import org.usfirst.frc.team5002.swerve.subsystems.*;
+import edu.wpi.first.wpilibj.command.InstantCommand;
 
 /**
  * SteerRezero.java -- Quickly rezero all swerve modules.

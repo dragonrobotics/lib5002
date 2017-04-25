@@ -1,10 +1,7 @@
 package org.usfirst.frc.team5002.swerve.commands;
 
-import org.usfirst.frc.team5002.robot.Robot;
-
-import edu.wpi.first.wpilibj.Joystick;
+import org.usfirst.frc.team5002.swerve.subsystems.*;
 import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * SnakeControl.java -- teleop drive control code for linear movement + rotation
@@ -80,13 +77,13 @@ public class SnakeControl extends Command {
 			angles[3] = (d==0 && b==0) ? 0.0 : (Math.atan2(b, d) * 180 / Math.PI); // back left
 		}
 
-		Robot.drivetrain.setSteerDegrees(angles);
-		Robot.drivetrain.setDriveSpeed(speeds);
+		drivetrain.setSteerDegrees(angles);
+		drivetrain.setDriveSpeed(speeds);
     }
 
     // Called just before this Command runs the first time
     protected void initialize() {
-		Robot.drivetrain.setSteerDegrees(0.0);
+		drivetrain.setSteerDegrees(0.0);
     }
 
     // Make this return true when this Command no longer needs to run execute()

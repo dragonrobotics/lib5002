@@ -1,10 +1,7 @@
 package org.usfirst.frc.team5002.swerve.commands;
 
-import org.usfirst.frc.team5002.robot.Robot;
-import org.usfirst.frc.team5002.robot.subsystems.swerve.*;
-
-import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj.DriverStation;
+import org.usfirst.frc.team5002.swerve.subsystems.*;
+import edu.wpi.first.wpilibj.command.InstantCommand;
 
 /**
  * KillDrivetrain.java -- Simple command for halting robot movement.
@@ -20,7 +17,7 @@ public class KillDrivetrain extends InstantCommand {
         drivetrain = swerve;
         requires(drivetrain);
     }
-    
+
     protected void execute() {
         drivetrain.setDriveSpeed(0.0);
     }

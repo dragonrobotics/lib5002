@@ -16,36 +16,37 @@ import edu.wpi.cscore.*;
  * @version 2.0, 04/21/2017
  */
 public class ViewPort extends Subsystem {
-	private UsbCamera cam1;
-	private UsbCamera cam2;
+	private class CameraPair {
+        public UsbCamera camera;
+        public CvSink sink;
 
-	private int currentSrc;
+        private int id;
 
+        public CameraPair(int i) {
+            id = i;
+            camera = CameraServer.getInstance().startAutomaticCapture(i);
+            sink = new CvSink("dummy-"+Integer.toString(i));
+
+            camera.setFPS(15);
+            camera.setResolution(240, 320);
+
+            sink.setSource(camera);
+            sink.setEnabled(true);
+        }
+
+        public int getID() { return id; }
+    };
+
+    CameraPair[] sources;
+    private int currentSrc;
     private VideoSink server;
-    private CvSink dummy1;
-    private CvSink dummy2;
 
     public ViewPort() {
-        cam1 = CameraServer.getInstance().startAutomaticCapture(0);
-        cam2 = CameraServer.getInstance().startAutomaticCapture(1);
-
-        cam1.setFPS(15);
-        cam1.setResolution(240, 320);
-
-        cam2.setFPS(15);
-        cam2.setResolution(240, 320);
+        sources = new CameraPair[2];
+        sources[0] = new CameraPair(0);
+        sources[1] = new CameraPair(1);
 
         server = CameraServer.getInstance().getServer();
-
-        dummy1 = new CvSink("dummy1");
-        dummy2 = new CvSink("dummy2");
-
-        dummy1.setSource(cam1);
-        dummy1.setEnabled(true);
-
-        dummy2.setSource(cam2);
-        dummy2.setEnabled(true);
-
         currentSrc = 0;
 	}
 
@@ -54,13 +55,23 @@ public class ViewPort extends Subsystem {
     }
 
     public void nextView() {
-    	if(currentSrc == 0) {
-    		server.setSource(cam2);
-    		currentSrc = 1;
-    	} else {
-    		server.setSource(cam1);
-    		currentSrc = 0;
-    	}
+        if(currentSrc == (sources.len-1)) {
+            currentSrc = 0;
+        } else {
+            currentSrc += 1;
+        }
+
+        server.setSource(sources[currentSrc].camera);
+    }
+
+    public void prevView() {
+        if(currentSrc == 0) {
+            currentSrc = sources.length-1;
+        } else {
+            currentSrc -= 1;
+        }
+
+        server.setSource(sources[currentSrc].camera);
     }
 
 	public void initDefaultCommand() {}
