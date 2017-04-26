@@ -1,19 +1,6 @@
 package org.usfirst.frc.team5002.vision.subsystems;
 
-import org.usfirst.frc.team5002.robot.Robot;
-import org.usfirst.frc.team5002.robot.RobotMap;
-
-import com.kauailabs.navx.frc.AHRS;
-
-import edu.wpi.first.wpilibj.smartdashboard.*;
 import edu.wpi.first.wpilibj.command.Subsystem;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.AnalogInput;
-import edu.wpi.first.wpilibj.SPI;
-import edu.wpi.first.wpilibj.SerialPort;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.SPI.Port;
-
 import edu.wpi.first.wpilibj.networktables.*;
 
 /**

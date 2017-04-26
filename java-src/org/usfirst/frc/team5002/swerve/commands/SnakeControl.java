@@ -32,7 +32,6 @@ public class SnakeControl extends Command {
         requires(drivetrain);
     }
 
-    private boolean autoAlignButtonDebounce = false;
     protected void execute() {
 		double fwd = (Math.abs(Robot.oi.getForwardAxis()) > joystickDeadband) ? Robot.oi.getForwardAxis() : 0.0;
 		double str = (Math.abs(Robot.oi.getHorizontalAxis()) > joystickDeadband) ? Robot.oi.getHorizontalAxis() : 0.0;

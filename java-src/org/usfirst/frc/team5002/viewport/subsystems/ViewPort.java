@@ -2,11 +2,6 @@ package org.usfirst.frc.team5002.viewport.subsystems;
 
 import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.CameraServer;
-import edu.wpi.first.wpilibj.networktables.NetworkTablesJNI;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-
-import org.usfirst.frc.team5002.robot.Robot;
 
 import edu.wpi.cscore.*;
 
@@ -55,7 +50,7 @@ public class ViewPort extends Subsystem {
     }
 
     public void nextView() {
-        if(currentSrc == (sources.len-1)) {
+        if(currentSrc == (sources.length-1)) {
             currentSrc = 0;
         } else {
             currentSrc += 1;

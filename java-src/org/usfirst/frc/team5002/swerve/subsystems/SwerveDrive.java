@@ -1,17 +1,8 @@
 package org.usfirst.frc.team5002.swerve.subsystems;
 
-import org.usfirst.frc.team5002.robot.RobotMap;
 import org.usfirst.frc.team5002.swerve.commands.KillDrivetrain;
 
-import com.ctre.CANTalon;
-import com.ctre.CANTalon.FeedbackDevice;
-import com.ctre.CANTalon.TalonControlMode;
-
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.command.Subsystem;
-import edu.wpi.first.wpilibj.networktables.NetworkTablesJNI;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 
 /**
  * SwerveDrive.java -- Swerve drive subsystem with 4 swerve modules in a square configuration.
@@ -24,11 +15,16 @@ public class SwerveDrive extends Subsystem {
     public SwerveModule bl;
     public SwerveModule br;
 
-    public SwerveDrive() {
-        fl = new SwerveModule("FL", RobotMap.fl_steer, RobotMap.fl_drive);
-        fr = new SwerveModule("FR", RobotMap.fr_steer, RobotMap.fr_drive);
-        bl = new SwerveModule("BL", RobotMap.bl_steer, RobotMap.bl_drive);
-        br = new SwerveModule("BR", RobotMap.br_steer, RobotMap.br_drive);
+    /**
+     * Both arrays should hold the IDs of the steer and drive controllers for
+     * each swerve modules in this order:
+     * Front-Left, Front-Right, Back-Left, Back-Right
+     */
+    public SwerveDrive(int[] steer, int[] drive) {
+        fl = new SwerveModule("FL", steer[0], drive[0]);
+        fr = new SwerveModule("FR", steer[1], drive[1]);
+        bl = new SwerveModule("BL", steer[2], drive[2]);
+        br = new SwerveModule("BR", steer[3], drive[3]);
     }
 
     protected void initDefaultCommand() {
