@@ -31,6 +31,10 @@ public class SwerveDrive extends Subsystem {
         br = new SwerveModule("BR", RobotMap.br_steer, RobotMap.br_drive);
     }
 
+    protected void initDefaultCommand() {
+        setDefaultCommand(new KillDrivetrain(this));
+    }
+
 
     public void setSteerDegrees(double degrees_fl, double degrees_fr, double degrees_bl, double degrees_br) {
         fl.setSteerDegrees(degrees_fl);
